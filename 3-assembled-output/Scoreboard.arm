@@ -1,0 +1,171 @@
+.set CODE, 0x00000000
+.set OS_WriteC, 0x00
+.set OS_WriteS, 0x01
+.set OS_ReadC, 0x04
+.set OS_Byte, 0x06
+.set OS_Word, 0x07
+.set OS_Mouse, 0x1C
+.set OS_BinaryToDecimal, 0x28
+.set XOS_Claim, 0x2001F
+.set XOS_Release, 0x20020
+.set XEconet_StartTransmit, 0x60006
+.set XEconet_AbandonTransmit, 0x60008
+.org CODE
+.long 0
+.long InitialiseModule
+.long FinaliseModule
+.long 0
+.long title
+.long help
+.long 0
+title:
+.byte "EliteScoreboard"
+.byte 0
+.balign 4
+help:
+.byte "EliteScoreboard"
+.byte 9
+.byte "1.00 (26 Mar 2025)"
+.byte 0
+.balign 4
+InitialiseModule:
+ STMFD   R13!, {R0-R3, R14}
+ LDR     R0, cmdrRank
+ ADR     R1, currentRank
+ LDR     R2, [R0]
+ STR     R2, [R1]
+ MOV     R0, #0x10
+ ADR     R1, RunScoreboard
+ MOV     R2, #0
+ SWI     XOS_Claim
+ LDMFD   R13!, {R0-R3, PC}^
+FinaliseModule:
+ STMFD   R13!, {R0-R3, R14}
+ MOV     R0, #0x10
+ ADR     R1, RunScoreboard
+ MOV     R2, #0
+ SWI     XOS_Release
+ ADR     R0, econetHandle
+ LDR     R0, [R0]
+ SWINE   XEconet_AbandonTransmit
+ LDMFD   R13!, {R0-R3, PC}^
+RunScoreboard:
+ STMFD   R13!, {R0-R7}
+ LDR     R0, cmdrRank
+ ADR     R1, currentRank
+ LDR     R2, [R0]
+ LDR     R3, [R1]
+ CMP     R2, R3
+ ADRGT   R0, netTally
+ LDRGT   R1, [R0]
+ ADDGT   R1, R1, #1
+ STRGT   R1, [R0]
+ BGT     TransmitData
+ LDMFD   R13, {R0-R7}
+ TEQ     R0, #11
+ TEQEQ   R1, #1
+ TEQEQ   R2, #1
+ BEQ     TransmitData
+ LDMFD   R13!, {R0-R7}
+ MOVS    PC, R14
+TransmitData:
+ ADR     R0, econetHandle
+ LDR     R0, [R0]
+ SWINE   XEconet_AbandonTransmit
+ ADR     R1, transmitBuffer
+ LDR     R0, cmdrName
+ LDR     R2, [R0]
+ STR     R2, [R1]
+ LDR     R2, [R0, #4]
+ STR     R2, [R1, #4]
+ MOV     R2, #13
+ STRB    R2, [R1, #7]
+ LDRB    R3, [R1, #6]
+ STRBEQ  R2, [R1, #6]
+ LDRB    R3, [R1, #5]
+ STRBEQ  R2, [R1, #5]
+ LDRB    R3, [R1, #4]
+ STRBEQ  R2, [R1, #4]
+ LDRB    R3, [R1, #3]
+ STRBEQ  R2, [R1, #3]
+ LDRB    R3, [R1, #2]
+ STRBEQ  R2, [R1, #2]
+ LDRB    R3, [R1, #1]
+ STRBEQ  R2, [R1, #1]
+ LDR     R0, cmdrCredits
+ LDR     R2, [R0]
+ STR     R2, [R1, #12]
+ MOV     R3, #1
+ LDR     R0, cmdrLegal
+ LDR     R2, [R0]
+ CMP     R2, #0x28
+ MOVLE   R3, #0
+ CMP     R2, #0x3E8
+ MOVGT   R3, #3
+ LDR     R0, cmdrCondition
+ LDR     R2, [R0]
+ ADD     R2, R2, #1
+ CMP     R2, #4
+ CMPNE   R2, #5
+ MOVEQ   R2, #3
+ CMP     R2, #6
+ MOVGE   R2, #0
+ ORR     R3, R3, R2, LSL #8
+ ADR     R0, netTally
+ LDRB    R2, [R0]
+ ORR     R3, R3, R2, LSL #16 
+ ADR     R0, netDeaths
+ LDRB    R2, [R0]
+ ORR     R3, R3, R2, LSL #24 
+ STR     R3, [R1, #8]
+ MOV     R0, #4
+ STR     R0, [R1, #16]
+ MOV     R0, #0
+ ADR     R1, scorePort
+ LDR     R1, [R1]
+ ADR     R2, scoreStation
+ LDR     R2, [R2]
+ ADR     R3, scoreNetwork
+ LDR     R3, [R3]
+ ADR     R4, transmitBuffer
+ MOV     R5, #20
+ MOV     R6, #1
+ MOV     R7, #0
+ SWI     XEconet_StartTransmit
+ ADRVC   R1, econetHandle
+ STRVC   R0, [R1]
+ LDMFD   R13!, {R0-R7}
+ MOVS    PC, R14
+cmdrName:
+.long 0x5A698
+cmdrRank:
+.long 0x5A960
+cmdrCredits:
+.long 0x6534C
+cmdrLegal:
+.long 0x65398
+cmdrCondition:
+.long 0x653A0
+scorePort:
+.long 100
+scoreStation:
+.long 128
+scoreNetwork:
+.long 0
+currentRank:
+.long 0
+netTally:
+.long 65
+netDeaths:
+.long 5
+econetHandle:
+.long 0
+transmitBuffer:
+.long 0
+.long 0
+.long 0
+.long 0
+.long 0
+endBuffer:
+.byte "Does your mother know you do this?"
+.byte 0

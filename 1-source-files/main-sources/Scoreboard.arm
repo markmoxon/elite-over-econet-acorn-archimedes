@@ -1,0 +1,504 @@
+\ ******************************************************************************
+\
+\ ELITE OVER ECONET SCOREBOARD MODULE SOURCE
+\
+\ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
+\ in the documentation are entirely my fault
+\
+\ The terminology and notations used in this commentary are explained at
+\ https://elite.bbcelite.com/terminology
+\
+\ The deep dive articles referred to in this commentary can be found at
+\ https://elite.bbcelite.com/deep_dives
+\
+\ ------------------------------------------------------------------------------
+\
+\ This source file produces the following binary file:
+\
+\   * Scoreboard.bin
+\
+\ ******************************************************************************
+
+ CODE = &00000000                   \ The build address for the Module
+
+\ ******************************************************************************
+\
+\ Operating system SWI numbers
+\
+\ ******************************************************************************
+
+ OS_WriteC = &00                    \ The operating system call to write a
+                                    \ character to all the output streams
+
+ OS_WriteS = &01                    \ The operating system call to write a
+                                    \ string to all the output streams
+
+ OS_ReadC = &04                     \ The operating system call to read a key
+                                    \ press
+
+ OS_Byte = &06                      \ General-purpose operating system calls
+
+ OS_Word = &07                      \ General-purpose operating system calls
+
+ OS_Mouse = &1C                     \ The operating system call to read the
+                                    \ mouse status
+
+ OS_BinaryToDecimal = &28           \ The operating system call to convert a
+                                    \ number into a string
+
+ XOS_Claim = &2001F                 \ The operating system call to add a routine
+                                    \ to the list of those that claim a vector
+
+ XOS_Release = &20020               \ The operating system call to remove a
+                                    \ routine from the list of those that claim
+                                    \ a vector
+
+ XEconet_StartTransmit = &60006     \ The operating system call to create a
+                                    \ Transmit Control Block and start a
+                                    \ transmission
+
+ XEconet_AbandonTransmit = &60008   \ The operating system call to abandon a
+                                    \ Transmit Control Block and reclaim the
+                                    \ memory
+
+\ ******************************************************************************
+\
+\ ELITE OVER ECONET SCOREBOARD MODULE CODE
+\
+\ Produces the binary file Scoreboard.bin.
+\
+\ ******************************************************************************
+
+ DIM CODE% &1000                    \ Reserve a block in memory for the
+                                    \ assembled code
+
+ FOR pass% = 4 TO 6 STEP 2          \ Perform a two-pass assembly, using both
+                                    \ P% and O%, with errors enabled on the
+                                    \ second pass only
+
+ O% = CODE%                         \ Assemble the code for deployment to
+                                    \ address O%
+
+ P% = CODE                          \ Assemble the code into the block at P%
+
+ [                                  \ Switch from BASIC into assembly language
+
+ OPT pass%                          \ Set the assembly option for this pass
+
+\ ******************************************************************************
+\
+\       Name: Module header
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Relocatable module header
+\
+\ ******************************************************************************
+
+ EQUD 0                             \ Offset to start code
+
+ EQUD InitialiseModule              \ Offset to initialisation code
+
+ EQUD FinaliseModule                \ Offset to finalisation code
+
+ EQUD 0                             \ Offset to service call handler
+
+ EQUD title                         \ Offset to title string
+
+ EQUD help                          \ Offset to help string
+
+ EQUD 0                             \ Offset to help and command keyword table
+
+\ ******************************************************************************
+\
+\       Name: Module title
+\       Type: Variable
+\   Category: Scoreboard
+\    Summary: Relocatable module title string
+\
+\ ******************************************************************************
+
+.title
+
+ EQUS "EliteScoreboard"
+ EQUB 0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: Module help text
+\       Type: Variable
+\   Category: Scoreboard
+\    Summary: Relocatable module help string
+\
+\ ******************************************************************************
+
+.help
+
+ EQUS "EliteScoreboard"
+ EQUB 9
+ EQUS "1.00 (26 Mar 2025)"
+ EQUB 0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: InitialiseModule
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Initialise the module
+\
+\ ******************************************************************************
+
+.InitialiseModule
+
+ STMFD   R13!, {R0-R3, R14}         \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+ LDR     R0, cmdrRank               \ Initialise currentRank with the current
+ ADR     R1, currentRank            \ kill score for the commander
+ LDR     R2, [R0]
+ STR     R2, [R1]
+
+ MOV     R0, #&10                   \ Set R0 to the number of the EventV vector
+
+ ADR     R1, RunScoreboard          \ Set R1 to the address of RunScoreboard
+                                    \ routine that handles the event
+
+ MOV     R2, #0                     \ Set R2 = 0 as the value to be passed to
+                                    \ the handler in R12
+
+ SWI     XOS_Claim                  \ Add the RunScoreboard to the list of
+                                    \ routines claiming the event vector
+
+ LDMFD   R13!, {R0-R3, PC}^         \ Retrieve the registers that we stored on
+                                    \ the stack and return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: FinaliseModule
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Finalise the module
+\
+\ ******************************************************************************
+
+.FinaliseModule
+
+ STMFD   R13!, {R0-R3, R14}         \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+ MOV     R0, #&10                   \ Set R0 to the number of the EventV vector
+
+ ADR     R1, RunScoreboard          \ Set R1 to the address of RunScoreboard
+                                    \ routine that handles the event
+
+ MOV     R2, #0                     \ Set R2 = 0 as the value to be passed to
+                                    \ the handler in R12
+
+ SWI     XOS_Release                \ Remove RunScoreboard from the list of
+                                    \ routines claiming the event vector
+
+ ADR     R0, econetHandle           \ Fetch the handle of the previous packet
+ LDR     R0, [R0]
+
+ SWINE   XEconet_AbandonTransmit    \ Abandon the previous transmission (if
+                                    \ there is one) to recover its memory in
+                                    \ the RMA
+
+ LDMFD   R13!, {R0-R3, PC}^         \ Retrieve the registers that we stored on
+                                    \ the stack and return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: RunScoreboard
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Check for F1 and tally increments
+\
+\ ******************************************************************************
+
+.RunScoreboard
+
+ STMFD   R13!, {R0-R7}              \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+ LDR     R0, cmdrRank               \ If the commander's tally has increased
+ ADR     R1, currentRank            \ since the last time we were here, bump up
+ LDR     R2, [R0]                   \ the kill tally and transmit the new score
+ LDR     R3, [R1]
+ CMP     R2, R3
+ ADRGT   R0, netTally
+ LDRGT   R1, [R0]
+ ADDGT   R1, R1, #1
+ STRGT   R1, [R0]
+ BGT     TransmitData
+
+ LDMFD   R13, {R0-R7}               \ Retrieve the registers that we stored on
+                                    \ the stack and return from the subroutine,
+                                    \ leaving them on the stack, so R0 to R2 now
+                                    \ contain the event details
+
+ TEQ     R0, #11                    \ Is this the key up/down event?
+
+ TEQEQ   R1, #1                     \ Is this the key down event
+
+ TEQEQ   R2, #1                     \ Is key 1 (F1) being pressed down?
+
+ BEQ     TransmitData               \ If so, jump to TransmitData
+
+ LDMFD   R13!, {R0-R7}              \ Retrieve the registers that we stored on
+                                    \ the stack and return from the subroutine
+
+ MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: TransmitData
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Create and send an Econet data packet
+\
+\ ******************************************************************************
+
+.TransmitData
+
+ ADR     R0, econetHandle           \ Fetch the handle of the previous packet
+ LDR     R0, [R0]
+
+ SWINE   XEconet_AbandonTransmit    \ Abandon the previous transmission (if
+                                    \ there is one) to recover its memory in
+                                    \ the RMA
+
+ ADR     R1, transmitBuffer         \ Set R1 to the address of the transmit
+                                    \ buffer
+
+ LDR     R0, cmdrName               \ Set bytes #0-7 of the buffer to the
+ LDR     R2, [R0]                   \ null-terminated commander name (which
+ STR     R2, [R1]                   \ may be longer, so we just fetch the first
+ LDR     R2, [R0, #4]               \ eight characters)
+ STR     R2, [R1, #4]
+
+ MOV     R2, #13                    \ Ensure the commander name is no more than
+ STRB    R2, [R1, #7]               \ seven characters with a carriage return at
+                                    \ the end
+
+ LDRB    R3, [R1, #6]               \ Convert any null bytes in the commander
+ STRBEQ  R2, [R1, #6]               \ name to carriage returns, so we know the
+ LDRB    R3, [R1, #5]               \ name is CR-terminated
+ STRBEQ  R2, [R1, #5]
+ LDRB    R3, [R1, #4]
+ STRBEQ  R2, [R1, #4]
+ LDRB    R3, [R1, #3]
+ STRBEQ  R2, [R1, #3]
+ LDRB    R3, [R1, #2]
+ STRBEQ  R2, [R1, #2]
+ LDRB    R3, [R1, #1]
+ STRBEQ  R2, [R1, #1]
+
+ LDR     R0, cmdrCredits            \ Set bytes #12-15 to the commander credits
+ LDR     R2, [R0]
+ STR     R2, [R1, #12]
+ 
+                                    \ We now build R3 like this:
+                                    \
+                                    \   * Legal status (low byte)
+                                    \   * Condition (bits 8-15)
+                                    \   * Kill count (bits 16-23)
+                                    \   * Death count (high byte)
+                                    \
+                                    \ to store in bytes #8-11 of the transmit
+                                    \ buffer
+
+ MOV     R3, #1                     \ Set R3 to 1 (for Offender)
+
+ LDR     R0, cmdrLegal              \ Set R2 to the commander's legal status
+ LDR     R2, [R0]
+
+ CMP     R2, #&28                   \ If R2 <= &28 then set R3 to 0 (for Clean)
+ MOVLE   R3, #0
+
+ CMP     R2, #&3E8                  \ If R2 > &3E8 then set R3 to 3 (for
+ MOVGT   R3, #3                     \ Fugitive)
+
+ LDR     R0, cmdrCondition          \ Set R2 to the commander's condition plus 1
+ LDR     R2, [R0]                   \ to give 1 = Green, 2 = Yellow, 3 = Red,
+ ADD     R2, R2, #1                 \ 4 = Hyperspace, 5 = Witchspace, 6 = Docked
+
+ CMP     R2, #4                     \ If condition is Hyperspace or Witchspace,
+ CMPNE   R2, #5                     \ set R2 = 3 (for Red)
+ MOVEQ   R2, #3
+
+ CMP     R2, #6                     \ If condition is Docked, set R2 = 0
+ MOVGE   R2, #0
+
+ ORR     R3, R3, R2, LSL #8         \ Insert the condition in R2 into bits 8-15
+                                    \ of R3
+
+ ADR     R0, netTally               \ Insert the kill tally into bits 16-23 of
+ LDRB    R2, [R0]                   \ of R3
+ ORR     R3, R3, R2, LSL #16 
+
+ ADR     R0, netDeaths              \ Insert the death count into bits 24-31 of
+ LDRB    R2, [R0]                   \ of R3
+ ORR     R3, R3, R2, LSL #24 
+
+ STR     R3, [R1, #8]               \ Store R3 in bytes #8-11 of the transmit
+                                    \ buffer
+
+ MOV     R0, #4                     \ Set byte #16 to machine type 4
+ STR     R0, [R1, #16]
+
+                                    \ We now do the data transmission
+
+ MOV     R0, #0                     \ Set R0 to the flag byte
+
+ ADR     R1, scorePort              \ Set R1 to the port number
+ LDR     R1, [R1]
+
+ ADR     R2, scoreStation           \ Set R2 to the station number
+ LDR     R2, [R2]
+
+ ADR     R3, scoreNetwork           \ Set R3 to the network number
+ LDR     R3, [R3]
+
+ ADR     R4, transmitBuffer         \ Set the buffer address
+
+ MOV     R5, #20                    \ Set the buffer size
+
+ MOV     R6, #1                     \ Set the count
+
+ MOV     R7, #0                     \ Set the delay
+
+ SWI     XEconet_StartTransmit      \ Transmit the packet
+
+ ADRVC   R1, econetHandle           \ Store the handle for this transmission, if
+ STRVC   R0, [R1]                   \ the SWI call was successful
+
+ LDMFD   R13!, {R0-R7}              \ Retrieve the registers that we stored on
+                                    \ the stack and return from the subroutine
+
+ MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: Archimedes Elite addresses (version 1.14)
+\       Type: Workspace
+\   Category: Econet
+\    Summary: Addresses for the commander data in Elite
+\
+\ ******************************************************************************
+
+.cmdrName
+
+ EQUD &5A698
+
+.cmdrRank
+
+ EQUD &5A960
+
+.cmdrCredits
+
+ EQUD &6534C
+
+.cmdrLegal
+
+ EQUD &65398
+
+.cmdrCondition
+
+ EQUD &653A0
+
+\ ******************************************************************************
+\
+\       Name: Econet variables
+\       Type: Workspace
+\   Category: Econet
+\    Summary: Variables used in Elite over Econet
+\
+\ ******************************************************************************
+
+.scorePort
+
+ EQUD 100               \ The Econet port on which to talk to the scoreboard
+                        \ machine
+                        \
+                        \ If this is zero, the network is disabled and no
+                        \ commander data is transmitted
+
+.scoreStation
+
+ EQUD 128               \ The Econet station number of the scoreboard machine
+
+.scoreNetwork
+
+ EQUD 0                 \ The Econet network number of the scoreboard machine
+
+.currentRank
+
+ EQUD 0                 \ The current commander rank, so we can track it
+
+.netTally
+
+ EQUD 65                \ Stores a one-point-per-kill combat score for the
+                        \ scoreboard (so all platforms have the same point
+                        \ system)
+
+.netDeaths
+
+ EQUD 5                 \ Counts the number of deaths
+
+.econetHandle
+
+ EQUD 0                 \ The handle of the last packet transmission
+
+.transmitBuffer
+
+ EQUD 0                 \ A buffer to hold the data we want to transmit to the
+ EQUD 0                 \ scoreboard machine in the format:
+ EQUD 0                 \
+ EQUD 0                 \   * Bytes #0-7 = commander's name, terminated by a
+ EQUD 0                 \                  carriage return
+                        \
+                        \   * Byte #8 = commander's legal status
+                        \               0 = clean, 1 = offender, 2 = fugitive
+                        \
+                        \   * Byte #9 = commander's status condition
+                        \               0 = docked, 1 = green
+                        \               2 = yellow, 3 = red
+                        \
+                        \   * Byte #10 = commander's kill count
+                        \
+                        \   * Byte #11 = commander's death count
+                        \
+                        \   * Bytes #12-15 = commander's credits
+                        \
+                        \   * Byte #16 = machine type
+                        \                0 = BBC Micro SRAM, 1 = Master,
+                        \                2 = 6502SP, 3 = BBC Micro standard
+                        \                4 = Archimedes
+                        \
+                        \ Credits are transmitted with the low byte first
+                        \ (unlike the way that credits are stored in the game)
+
+.endBuffer
+
+ EQUS "Does your mother know you do this?"
+ EQUB 0
+
+\ ******************************************************************************
+\
+\ Two-pass assembly loop
+\
+\ ******************************************************************************
+
+ ]
+
+ NEXT pass%                         \ Loop back for the second pass
+
+\ ******************************************************************************
+\
+\ Save Scoreboard.bin
+\
+\ ******************************************************************************
+
+ OSCLI "SAVE Scoreboard.bin "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
