@@ -1,15 +1,26 @@
 .set CODE, 0x00000000
-.set OS_WriteC, 0x00
-.set OS_WriteS, 0x01
-.set OS_ReadC, 0x04
-.set OS_Byte, 0x06
-.set OS_Word, 0x07
-.set OS_Mouse, 0x1C
-.set OS_BinaryToDecimal, 0x28
+.set XOS_Module, 0x2001E
 .set XOS_Claim, 0x2001F
 .set XOS_Release, 0x20020
+.set XOS_ValidateAddress, 0x2003A
 .set XEconet_StartTransmit, 0x60006
 .set XEconet_AbandonTransmit, 0x60008
+.set scorePort, 0x0
+.set scoreStation, 0x04
+.set scoreNetwork, 0x08
+.set currentRank, 0x0C
+.set netTally, 0x10
+.set netDeaths, 0x14
+.set econetHandle, 0x18
+.set transmitBuffer, 0x1C
+.set trName, 0x1C
+.set trLegal, 0x24
+.set trCondition, 0x25
+.set trKill, 0x26
+.set trDeaths, 0x27
+.set trCredits, 0x28
+.set trMachine, 0x2C
+.set endOfBuffer, 0x30
 .org CODE
 .long 0
 .long InitialiseModule
@@ -29,80 +40,87 @@ help:
 .byte 0
 .balign 4
 InitialiseModule:
- STMFD   R13!, {R0-R3, R14}
- LDR     R0, cmdrRank
- ADR     R1, currentRank
- LDR     R2, [R0]
- STR     R2, [R1]
+ STMFD   R13!, {R14}
+ MOV     R0, #6
+ MOV     R3, #0x40
+ SWI     XOS_Module
+ BVS     init1
+ STR     R2, [R12]
+ MOV     R1, #100
+ STR     R1, [R2, #scorePort]
+ MOV     R1, #128
+ STR     R1, [R2, #scoreStation]
+ MOV     R1, #0
+ STR     R1, [R2, #scoreNetwork]
  MOV     R0, #0x10
  ADR     R1, RunScoreboard
- MOV     R2, #0
+ MOV     R2, R12
  SWI     XOS_Claim
- LDMFD   R13!, {R0-R3, PC}^
+ LDMFD   R13!, {PC}^
+init1:
+ LDMFD   R13!, {PC}
 FinaliseModule:
- STMFD   R13!, {R0-R3, R14}
+ STMFD   R13!, {R14}
  MOV     R0, #0x10
  ADR     R1, RunScoreboard
- MOV     R2, #0
+ MOV     R2, R12
  SWI     XOS_Release
- ADR     R0, econetHandle
- LDR     R0, [R0]
+ LDR     R12, [R12]
+ LDR     R0, [R12, #econetHandle]
  SWINE   XEconet_AbandonTransmit
- LDMFD   R13!, {R0-R3, PC}^
+ LDMFD   R13!, {PC}^
 RunScoreboard:
  STMFD   R13!, {R0-R7}
- LDR     R0, cmdrRank
- ADR     R1, currentRank
- LDR     R2, [R0]
- LDR     R3, [R1]
- CMP     R2, R3
- ADRGT   R0, netTally
- LDRGT   R1, [R0]
- ADDGT   R1, R1, #1
- STRGT   R1, [R0]
- BGT     TransmitData
- LDMFD   R13, {R0-R7}
+ LDR     R12, [R12]
  TEQ     R0, #11
  TEQEQ   R1, #1
- TEQEQ   R2, #1
+ TEQEQ   R2, #0x0B
  BEQ     TransmitData
  LDMFD   R13!, {R0-R7}
  MOVS    PC, R14
 TransmitData:
- ADR     R0, econetHandle
- LDR     R0, [R0]
+ LDR     R0, [R12, #econetHandle]
  SWINE   XEconet_AbandonTransmit
- ADR     R1, transmitBuffer
  LDR     R0, cmdrName
+ ADD     R1, R0, #4
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
  LDR     R2, [R0]
- STR     R2, [R1]
+ STR     R2, [R12, #trName]
  LDR     R2, [R0, #4]
- STR     R2, [R1, #4]
+ STR     R2, [R12, #trName+4]
  MOV     R2, #13
- STRB    R2, [R1, #7]
- LDRB    R3, [R1, #6]
- STRBEQ  R2, [R1, #6]
- LDRB    R3, [R1, #5]
- STRBEQ  R2, [R1, #5]
- LDRB    R3, [R1, #4]
- STRBEQ  R2, [R1, #4]
- LDRB    R3, [R1, #3]
- STRBEQ  R2, [R1, #3]
- LDRB    R3, [R1, #2]
- STRBEQ  R2, [R1, #2]
- LDRB    R3, [R1, #1]
- STRBEQ  R2, [R1, #1]
- LDR     R0, cmdrCredits
- LDR     R2, [R0]
- STR     R2, [R1, #12]
+ STRB    R2, [R12, #trName+7]
+ LDRB    R3, [R12, #trName+6]
+ STRBEQ  R2, [R12, #trName+6]
+ LDRB    R3, [R12, #trName+5]
+ STRBEQ  R2, [R12, #trName+5]
+ LDRB    R3, [R12, #trName+4]
+ STRBEQ  R2, [R12, #trName+4]
+ LDRB    R3, [R12, #trName+3]
+ STRBEQ  R2, [R12, #trName+3]
+ LDRB    R3, [R12, #trName+2]
+ STRBEQ  R2, [R12, #trName+2]
+ LDRB    R3, [R12, #trName+1]
+ STRBEQ  R2, [R12, #trName+1]
  MOV     R3, #1
  LDR     R0, cmdrLegal
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
  LDR     R2, [R0]
  CMP     R2, #0x28
  MOVLE   R3, #0
  CMP     R2, #0x3E8
  MOVGT   R3, #3
+ STRB    R3, [R12, #trLegal]
  LDR     R0, cmdrCondition
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
  LDR     R2, [R0]
  ADD     R2, R2, #1
  CMP     R2, #4
@@ -110,30 +128,32 @@ TransmitData:
  MOVEQ   R2, #3
  CMP     R2, #6
  MOVGE   R2, #0
- ORR     R3, R3, R2, LSL #8
- ADR     R0, netTally
- LDRB    R2, [R0]
- ORR     R3, R3, R2, LSL #16 
- ADR     R0, netDeaths
- LDRB    R2, [R0]
- ORR     R3, R3, R2, LSL #24 
- STR     R3, [R1, #8]
- MOV     R0, #4
- STR     R0, [R1, #16]
+ STRB    R2, [R12, #trCondition]
+ LDRB    R2, [R12, #netTally]
+ STRB    R2, [R12, #trKill]
+ LDRB    R2, [R12, #netDeaths]
+ STRB    R2, [R12, #trDeaths]
+ LDR     R0, cmdrCredits
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+ LDR     R2, [R0]
+ STR     R2, [R12, #trCredits]
+ MOV     R2, #4
+ STR     R2, [R12, #trMachine]
  MOV     R0, #0
- ADR     R1, scorePort
- LDR     R1, [R1]
- ADR     R2, scoreStation
- LDR     R2, [R2]
- ADR     R3, scoreNetwork
- LDR     R3, [R3]
- ADR     R4, transmitBuffer
+ LDR     R1, [R12, #scorePort]
+ LDR     R2, [R12, #scoreStation]
+ LDR     R3, [R12, #scoreNetwork]
+ ADD     R4, R12, #transmitBuffer
  MOV     R5, #20
  MOV     R6, #1
  MOV     R7, #0
  SWI     XEconet_StartTransmit
  ADRVC   R1, econetHandle
- STRVC   R0, [R1]
+ STRVC   R0, [R12, #econetHandle]
+done:
  LDMFD   R13!, {R0-R7}
  MOVS    PC, R14
 cmdrName:
@@ -146,26 +166,3 @@ cmdrLegal:
 .long 0x65398
 cmdrCondition:
 .long 0x653A0
-scorePort:
-.long 100
-scoreStation:
-.long 128
-scoreNetwork:
-.long 0
-currentRank:
-.long 0
-netTally:
-.long 65
-netDeaths:
-.long 5
-econetHandle:
-.long 0
-transmitBuffer:
-.long 0
-.long 0
-.long 0
-.long 0
-.long 0
-endBuffer:
-.byte "Does your mother know you do this?"
-.byte 0
