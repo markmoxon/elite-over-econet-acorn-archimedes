@@ -54,6 +54,16 @@
 \
 \ ******************************************************************************
 
+                                    \ R12 typically contains the address of the
+                                    \ module's private workspace, so each of the
+                                    \ variables in the workspace can be referred
+                                    \ to as:
+                                    \
+                                    \   [R12, #offset]
+                                    \
+                                    \ where #offset is one of the following
+                                    \ variables
+
  scorePort = &0                     \ The Econet port on which to talk to the
                                     \ scoreboard machine
                                     \
@@ -121,9 +131,9 @@
 
  P% = CODE                          \ Assemble the code into the block at P%
 
- [                                  \ Switch from BASIC into assembly language
+[                                   \ Switch from BASIC into assembly language
 
- OPT pass%                          \ Set the assembly option for this pass
+ OPT    pass%                       \ Set the assembly option for this pass
 
 \ ******************************************************************************
 \
@@ -134,19 +144,19 @@
 \
 \ ******************************************************************************
 
- EQUD 0                             \ Offset to start code
+ EQUD    0                          \ Offset to start code
 
- EQUD InitialiseModule              \ Offset to initialisation code
+ EQUD    InitialiseModule           \ Offset to initialisation code
 
- EQUD FinaliseModule                \ Offset to finalisation code
+ EQUD    FinaliseModule             \ Offset to finalisation code
 
- EQUD 0                             \ Offset to service call handler
+ EQUD    0                          \ Offset to service call handler
 
- EQUD title                         \ Offset to title string
+ EQUD    title                      \ Offset to title string
 
- EQUD help                          \ Offset to help string
+ EQUD    help                       \ Offset to help string
 
- EQUD 0                             \ Offset to help and command keyword table
+ EQUD    0                          \ Offset to help and command keyword table
 
 \ ******************************************************************************
 \
@@ -159,8 +169,8 @@
 
 .title
 
- EQUS "EliteScoreboard"
- EQUB 0
+ EQUS    "EliteScoreboard"
+ EQUB    0
  ALIGN
 
 \ ******************************************************************************
@@ -174,10 +184,10 @@
 
 .help
 
- EQUS "EliteScoreboard"
- EQUB 9
- EQUS "1.00 (26 Mar 2025)"
- EQUB 0
+ EQUS    "EliteScoreboard"
+ EQUB    9
+ EQUS    "1.00 (26 Mar 2025)"
+ EQUB    0
  ALIGN
 
 \ ******************************************************************************
@@ -464,23 +474,23 @@
 
 .cmdrName
 
- EQUD &5A698
+ EQUD    &5A698
 
 .cmdrRank
 
- EQUD &5A960
+ EQUD    &5A960
 
 .cmdrCredits
 
- EQUD &6534C
+ EQUD    &6534C
 
 .cmdrLegal
 
- EQUD &65398
+ EQUD    &65398
 
 .cmdrCondition
 
- EQUD &653A0
+ EQUD    &653A0
 
 \ ******************************************************************************
 \
