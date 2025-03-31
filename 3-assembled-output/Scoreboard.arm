@@ -1,85 +1,99 @@
 .set CODE, 0x00000000
 .set XOS_Module, 0x2001E
-.set XOS_Claim, 0x2001F
-.set XOS_Release, 0x20020
 .set XOS_ValidateAddress, 0x2003A
+.set XOS_CallEvery, 0x2003C
+.set XOS_RemoveTickerEvent, 0x2003D
 .set XEconet_StartTransmit, 0x60006
 .set XEconet_AbandonTransmit, 0x60008
-.set scorePort, 0x0
+.set scorePort, 0x00
 .set scoreStation, 0x04
 .set scoreNetwork, 0x08
 .set currentRank, 0x0C
 .set netTally, 0x10
 .set netDeaths, 0x14
 .set econetHandle, 0x18
-.set transmitBuffer, 0x1C
-.set trName, 0x1C
-.set trLegal, 0x24
-.set trCondition, 0x25
-.set trKill, 0x26
-.set trDeaths, 0x27
-.set trCredits, 0x28
-.set trMachine, 0x2C
-.set endOfBuffer, 0x30
+.set semaphore, 0x30
+.set transmitBuffer, 0x20
+.set trName, 0x20
+.set trLegal, 0x28
+.set trCondition, 0x29
+.set trKill, 0x2A
+.set trDeaths, 0x2B
+.set trCredits, 0x2C
+.set trMachine, 0x30
+.set endOfBuffer, 0x34
 .org CODE
-.long 0
-.long InitialiseModule
-.long FinaliseModule
-.long 0
-.long title
-.long help
-.long 0
+.long    0
+.long    InitialiseModule
+.long    FinaliseModule
+.long    0
+.long    title
+.long    help
+.long    0
 title:
-.byte "EliteScoreboard"
-.byte 0
+.byte    "EliteScoreboard"
+.byte    0
 .balign 4
 help:
-.byte "EliteScoreboard"
-.byte 9
-.byte "1.00 (26 Mar 2025)"
-.byte 0
+.byte    "EliteScoreboard"
+.byte    9
+.byte    "1.00 (26 Mar 2025)"
+.byte    0
 .balign 4
 InitialiseModule:
  STMFD   R13!, {R14}
+ LDR     R2, [R12]
+ TEQ     R2, #0
+ BNE     init1
  MOV     R0, #6
  MOV     R3, #0x40
  SWI     XOS_Module
- BVS     init1
+ LDMVSFD R13!, {PC}
  STR     R2, [R12]
+ MOV     R1, #0
+ STR     R1, [R2, #econetHandle]
+ STR     R1, [R2, #netTally]
+ STR     R1, [R2, #netDeaths]
+ STR     R1, [R2, #currentRank]
+ STR     R1, [R2, #scoreNetwork]
+ STR     R1, [R2, #scoreStation]
+ STR     R1, [R2, #scorePort]
+ STR     R1, [R2, #scoreNetwork]
  MOV     R1, #100
  STR     R1, [R2, #scorePort]
  MOV     R1, #128
  STR     R1, [R2, #scoreStation]
- MOV     R1, #0
- STR     R1, [R2, #scoreNetwork]
- MOV     R0, #0x10
- ADR     R1, RunScoreboard
- MOV     R2, R12
- SWI     XOS_Claim
- LDMFD   R13!, {PC}^
 init1:
- LDMFD   R13!, {PC}
+ MOV     R0, #100
+ ADR     R1, TransmitData
+ SWI     XOS_CallEvery
+ LDMFD   R13!, {PC}^
 FinaliseModule:
  STMFD   R13!, {R14}
- MOV     R0, #0x10
- ADR     R1, RunScoreboard
- MOV     R2, R12
- SWI     XOS_Release
  LDR     R12, [R12]
+ ADR     R0, TransmitData
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
  LDR     R0, [R12, #econetHandle]
+ TEQ     R0, #0
  SWINE   XEconet_AbandonTransmit
+ MOV     R1, #0
+ STR     R1, [R12, #econetHandle]
  LDMFD   R13!, {PC}^
-RunScoreboard:
- STMFD   R13!, {R0-R7}
- LDR     R12, [R12]
- TEQ     R0, #11
- TEQEQ   R1, #1
- TEQEQ   R2, #0x0B
- BEQ     TransmitData
- LDMFD   R13!, {R0-R7}
- MOVS    PC, R14
 TransmitData:
+ STMFD   R13!, {R0-R12}
+ MOV     R5, PC
+ BIC     R4, R5, #3
+ TEQP    R4, #3
+ MOV     R0, R0
+ STMFD   R13!, {R5, R14}
+ LDR     R0, [R12, #semaphore]
+ TEQ     R0, #0
+ BNE     done
+ MOV     R0, #1
+ STR     R0, [R12, #semaphore]
  LDR     R0, [R12, #econetHandle]
+ TEQ     R0, #0
  SWINE   XEconet_AbandonTransmit
  LDR     R0, cmdrName
  ADD     R1, R0, #4
@@ -93,17 +107,26 @@ TransmitData:
  MOV     R2, #13
  STRB    R2, [R12, #trName+7]
  LDRB    R3, [R12, #trName+6]
- STRBEQ  R2, [R12, #trName+6]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+6]
  LDRB    R3, [R12, #trName+5]
- STRBEQ  R2, [R12, #trName+5]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+5]
  LDRB    R3, [R12, #trName+4]
- STRBEQ  R2, [R12, #trName+4]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+4]
  LDRB    R3, [R12, #trName+3]
- STRBEQ  R2, [R12, #trName+3]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+3]
  LDRB    R3, [R12, #trName+2]
- STRBEQ  R2, [R12, #trName+2]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+2]
  LDRB    R3, [R12, #trName+1]
- STRBEQ  R2, [R12, #trName+1]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+1]
+ LDRB    R3, [R12, #trName]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName]
  MOV     R3, #1
  LDR     R0, cmdrLegal
  MOV     R1, R0
@@ -151,18 +174,23 @@ TransmitData:
  MOV     R6, #1
  MOV     R7, #0
  SWI     XEconet_StartTransmit
- ADRVC   R1, econetHandle
- STRVC   R0, [R12, #econetHandle]
+ MOVVS   R0, #0
+ STR     R0, [R12, #econetHandle]
 done:
- LDMFD   R13!, {R0-R7}
- MOVS    PC, R14
+ MOV     R0, #0
+ STR     R0, [R12, #semaphore]
+ LDMFD   R13!, {R5, R14}
+ TEQP    R5, #0
+ MOV     R0, R0
+ LDMFD   R13!, {R0-R12}
+ MOV     PC, R14
 cmdrName:
-.long 0x5A698
+.long    0x5A698
 cmdrRank:
-.long 0x5A960
+.long    0x5A960
 cmdrCredits:
-.long 0x6534C
+.long    0x6534C
 cmdrLegal:
-.long 0x65398
+.long    0x65398
 cmdrCondition:
-.long 0x653A0
+.long    0x653A0

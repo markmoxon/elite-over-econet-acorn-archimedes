@@ -1,251 +1,281 @@
 Sections:
-00: "seg0" (0-220)
+00: "seg0" (0-290)
 
 
 Source: "3-assembled-output/Scoreboard.arm"
                             	     1: .set CODE, 0x00000000
                             	     2: .set XOS_Module, 0x2001E
-                            	     3: .set XOS_Claim, 0x2001F
-                            	     4: .set XOS_Release, 0x20020
-                            	     5: .set XOS_ValidateAddress, 0x2003A
+                            	     3: .set XOS_ValidateAddress, 0x2003A
+                            	     4: .set XOS_CallEvery, 0x2003C
+                            	     5: .set XOS_RemoveTickerEvent, 0x2003D
                             	     6: .set XEconet_StartTransmit, 0x60006
                             	     7: .set XEconet_AbandonTransmit, 0x60008
-                            	     8: .set scorePort, 0x0
+                            	     8: .set scorePort, 0x00
                             	     9: .set scoreStation, 0x04
                             	    10: .set scoreNetwork, 0x08
                             	    11: .set currentRank, 0x0C
                             	    12: .set netTally, 0x10
                             	    13: .set netDeaths, 0x14
                             	    14: .set econetHandle, 0x18
-                            	    15: .set transmitBuffer, 0x1C
-                            	    16: .set trName, 0x1C
-                            	    17: .set trLegal, 0x24
-                            	    18: .set trCondition, 0x25
-                            	    19: .set trKill, 0x26
-                            	    20: .set trDeaths, 0x27
-                            	    21: .set trCredits, 0x28
-                            	    22: .set trMachine, 0x2C
-                            	    23: .set endOfBuffer, 0x30
-                            	    24: .org CODE
-00:00000000 00000000        	    25: .long 0
-00:00000004 50000000        	    26: .long InitialiseModule
-00:00000008 98000000        	    27: .long FinaliseModule
-00:0000000C 00000000        	    28: .long 0
-00:00000010 1C000000        	    29: .long title
-00:00000014 2C000000        	    30: .long help
-00:00000018 00000000        	    31: .long 0
-                            	    32: title:
-00:0000001C 456C69746553636F	    33: .byte "EliteScoreboard"
+                            	    15: .set semaphore, 0x30
+                            	    16: .set transmitBuffer, 0x20
+                            	    17: .set trName, 0x20
+                            	    18: .set trLegal, 0x28
+                            	    19: .set trCondition, 0x29
+                            	    20: .set trKill, 0x2A
+                            	    21: .set trDeaths, 0x2B
+                            	    22: .set trCredits, 0x2C
+                            	    23: .set trMachine, 0x30
+                            	    24: .set endOfBuffer, 0x34
+                            	    25: .org CODE
+00:00000000 00000000        	    26: .long    0
+00:00000004 50000000        	    27: .long    InitialiseModule
+00:00000008 B8000000        	    28: .long    FinaliseModule
+00:0000000C 00000000        	    29: .long    0
+00:00000010 1C000000        	    30: .long    title
+00:00000014 2C000000        	    31: .long    help
+00:00000018 00000000        	    32: .long    0
+                            	    33: title:
+00:0000001C 456C69746553636F	    34: .byte    "EliteScoreboard"
 00:00000024 7265626F617264
-00:0000002B 00              	    34: .byte 0
-                            	    35: .balign 4
-                            	    36: help:
-00:0000002C 456C69746553636F	    37: .byte "EliteScoreboard"
+00:0000002B 00              	    35: .byte    0
+                            	    36: .balign 4
+                            	    37: help:
+00:0000002C 456C69746553636F	    38: .byte    "EliteScoreboard"
 00:00000034 7265626F617264
-00:0000003B 09              	    38: .byte 9
-00:0000003C 312E303020283236	    39: .byte "1.00 (26 Mar 2025)"
+00:0000003B 09              	    39: .byte    9
+00:0000003C 312E303020283236	    40: .byte    "1.00 (26 Mar 2025)"
 00:00000044 204D617220323032
 00:0000004C 3529
-00:0000004E 00              	    40: .byte 0
-                            	    41: .balign 4
-                            	    42: InitialiseModule:
-00:00000050 00402DE9        	    43:  STMFD   R13!, {R14}
-00:00000054 0600A0E3        	    44:  MOV     R0, #6
-00:00000058 4030A0E3        	    45:  MOV     R3, #0x40
-00:0000005C 1E0002EF        	    46:  SWI     XOS_Module
-00:00000060 0B00006A        	    47:  BVS     init1
-00:00000064 00208CE5        	    48:  STR     R2, [R12]
-00:00000068 6410A0E3        	    49:  MOV     R1, #100
-00:0000006C 001082E5        	    50:  STR     R1, [R2, #scorePort]
-00:00000070 8010A0E3        	    51:  MOV     R1, #128
-00:00000074 041082E5        	    52:  STR     R1, [R2, #scoreStation]
-00:00000078 0010A0E3        	    53:  MOV     R1, #0
-00:0000007C 081082E5        	    54:  STR     R1, [R2, #scoreNetwork]
-00:00000080 1000A0E3        	    55:  MOV     R0, #0x10
-00:00000084 30108FE2        	    56:  ADR     R1, RunScoreboard
-00:00000088 0C20A0E1        	    57:  MOV     R2, R12
-00:0000008C 1F0002EF        	    58:  SWI     XOS_Claim
-00:00000090 0080FDE8        	    59:  LDMFD   R13!, {PC}^
-                            	    60: init1:
-00:00000094 0080BDE8        	    61:  LDMFD   R13!, {PC}
-                            	    62: FinaliseModule:
-00:00000098 00402DE9        	    63:  STMFD   R13!, {R14}
-00:0000009C 1000A0E3        	    64:  MOV     R0, #0x10
-00:000000A0 14108FE2        	    65:  ADR     R1, RunScoreboard
-00:000000A4 0C20A0E1        	    66:  MOV     R2, R12
-00:000000A8 200002EF        	    67:  SWI     XOS_Release
-00:000000AC 00C09CE5        	    68:  LDR     R12, [R12]
-00:000000B0 18009CE5        	    69:  LDR     R0, [R12, #econetHandle]
-00:000000B4 0800061F        	    70:  SWINE   XEconet_AbandonTransmit
-00:000000B8 0080FDE8        	    71:  LDMFD   R13!, {PC}^
-                            	    72: RunScoreboard:
-00:000000BC FF002DE9        	    73:  STMFD   R13!, {R0-R7}
-00:000000C0 00C09CE5        	    74:  LDR     R12, [R12]
-00:000000C4 0B0030E3        	    75:  TEQ     R0, #11
-00:000000C8 01003103        	    76:  TEQEQ   R1, #1
-00:000000CC 0B003203        	    77:  TEQEQ   R2, #0x0B
-00:000000D0 0100000A        	    78:  BEQ     TransmitData
-00:000000D4 FF00BDE8        	    79:  LDMFD   R13!, {R0-R7}
-00:000000D8 0EF0B0E1        	    80:  MOVS    PC, R14
-                            	    81: TransmitData:
-00:000000DC 18009CE5        	    82:  LDR     R0, [R12, #econetHandle]
-00:000000E0 0800061F        	    83:  SWINE   XEconet_AbandonTransmit
-00:000000E4 20019FE5        	    84:  LDR     R0, cmdrName
-00:000000E8 041080E2        	    85:  ADD     R1, R0, #4
-00:000000EC 3A0002EF        	    86:  SWI     XOS_ValidateAddress
-00:000000F0 4300006A        	    87:  BVS     done
-00:000000F4 4200002A        	    88:  BCS     done
-00:000000F8 002090E5        	    89:  LDR     R2, [R0]
-00:000000FC 1C208CE5        	    90:  STR     R2, [R12, #trName]
-00:00000100 042090E5        	    91:  LDR     R2, [R0, #4]
-00:00000104 20208CE5        	    92:  STR     R2, [R12, #trName+4]
-00:00000108 0D20A0E3        	    93:  MOV     R2, #13
-00:0000010C 2320CCE5        	    94:  STRB    R2, [R12, #trName+7]
-00:00000110 2230DCE5        	    95:  LDRB    R3, [R12, #trName+6]
-00:00000114 22208CE5        	    96:  STRBEQ  R2, [R12, #trName+6]
-00:00000118 2130DCE5        	    97:  LDRB    R3, [R12, #trName+5]
-00:0000011C 21208CE5        	    98:  STRBEQ  R2, [R12, #trName+5]
-00:00000120 2030DCE5        	    99:  LDRB    R3, [R12, #trName+4]
-00:00000124 20208CE5        	   100:  STRBEQ  R2, [R12, #trName+4]
-00:00000128 1F30DCE5        	   101:  LDRB    R3, [R12, #trName+3]
-00:0000012C 1F208CE5        	   102:  STRBEQ  R2, [R12, #trName+3]
-00:00000130 1E30DCE5        	   103:  LDRB    R3, [R12, #trName+2]
-00:00000134 1E208CE5        	   104:  STRBEQ  R2, [R12, #trName+2]
-00:00000138 1D30DCE5        	   105:  LDRB    R3, [R12, #trName+1]
-00:0000013C 1D208CE5        	   106:  STRBEQ  R2, [R12, #trName+1]
-00:00000140 0130A0E3        	   107:  MOV     R3, #1
-00:00000144 CC009FE5        	   108:  LDR     R0, cmdrLegal
-00:00000148 0010A0E1        	   109:  MOV     R1, R0
-00:0000014C 3A0002EF        	   110:  SWI     XOS_ValidateAddress
-00:00000150 2B00006A        	   111:  BVS     done
-00:00000154 2A00002A        	   112:  BCS     done
-00:00000158 002090E5        	   113:  LDR     R2, [R0]
-00:0000015C 280052E3        	   114:  CMP     R2, #0x28
-00:00000160 0030A0D3        	   115:  MOVLE   R3, #0
-00:00000164 FA0F52E3        	   116:  CMP     R2, #0x3E8
-00:00000168 0330A0C3        	   117:  MOVGT   R3, #3
-00:0000016C 2430CCE5        	   118:  STRB    R3, [R12, #trLegal]
-00:00000170 A4009FE5        	   119:  LDR     R0, cmdrCondition
-00:00000174 0010A0E1        	   120:  MOV     R1, R0
-00:00000178 3A0002EF        	   121:  SWI     XOS_ValidateAddress
-00:0000017C 2000006A        	   122:  BVS     done
-00:00000180 1F00002A        	   123:  BCS     done
-00:00000184 002090E5        	   124:  LDR     R2, [R0]
-00:00000188 012082E2        	   125:  ADD     R2, R2, #1
-00:0000018C 040052E3        	   126:  CMP     R2, #4
-00:00000190 05005213        	   127:  CMPNE   R2, #5
-00:00000194 0320A003        	   128:  MOVEQ   R2, #3
-00:00000198 060052E3        	   129:  CMP     R2, #6
-00:0000019C 0020A0A3        	   130:  MOVGE   R2, #0
-00:000001A0 2520CCE5        	   131:  STRB    R2, [R12, #trCondition]
-00:000001A4 1020DCE5        	   132:  LDRB    R2, [R12, #netTally]
-00:000001A8 2620CCE5        	   133:  STRB    R2, [R12, #trKill]
-00:000001AC 1420DCE5        	   134:  LDRB    R2, [R12, #netDeaths]
-00:000001B0 2720CCE5        	   135:  STRB    R2, [R12, #trDeaths]
-00:000001B4 58009FE5        	   136:  LDR     R0, cmdrCredits
-00:000001B8 0010A0E1        	   137:  MOV     R1, R0
-00:000001BC 3A0002EF        	   138:  SWI     XOS_ValidateAddress
-00:000001C0 0F00006A        	   139:  BVS     done
-00:000001C4 0E00002A        	   140:  BCS     done
-00:000001C8 002090E5        	   141:  LDR     R2, [R0]
-00:000001CC 28208CE5        	   142:  STR     R2, [R12, #trCredits]
-00:000001D0 0420A0E3        	   143:  MOV     R2, #4
-00:000001D4 2C208CE5        	   144:  STR     R2, [R12, #trMachine]
-00:000001D8 0000A0E3        	   145:  MOV     R0, #0
-00:000001DC 00109CE5        	   146:  LDR     R1, [R12, #scorePort]
-00:000001E0 04209CE5        	   147:  LDR     R2, [R12, #scoreStation]
-00:000001E4 08309CE5        	   148:  LDR     R3, [R12, #scoreNetwork]
-00:000001E8 1C408CE2        	   149:  ADD     R4, R12, #transmitBuffer
-00:000001EC 1450A0E3        	   150:  MOV     R5, #20
-00:000001F0 0160A0E3        	   151:  MOV     R6, #1
-00:000001F4 0070A0E3        	   152:  MOV     R7, #0
-00:000001F8 060006EF        	   153:  SWI     XEconet_StartTransmit
-00:000001FC 7B1F4F72        	   154:  ADRVC   R1, econetHandle
-00:00000200 18008C75        	   155:  STRVC   R0, [R12, #econetHandle]
-                            	   156: done:
-00:00000204 FF00BDE8        	   157:  LDMFD   R13!, {R0-R7}
-00:00000208 0EF0B0E1        	   158:  MOVS    PC, R14
-                            	   159: cmdrName:
-00:0000020C 98A60500        	   160: .long 0x5A698
-                            	   161: cmdrRank:
-00:00000210 60A90500        	   162: .long 0x5A960
-                            	   163: cmdrCredits:
-00:00000214 4C530600        	   164: .long 0x6534C
-                            	   165: cmdrLegal:
-00:00000218 98530600        	   166: .long 0x65398
-                            	   167: cmdrCondition:
-00:0000021C A0530600        	   168: .long 0x653A0
-                            	   169: 
+00:0000004E 00              	    41: .byte    0
+                            	    42: .balign 4
+                            	    43: InitialiseModule:
+00:00000050 00402DE9        	    44:  STMFD   R13!, {R14}
+00:00000054 00209CE5        	    45:  LDR     R2, [R12]
+00:00000058 000032E3        	    46:  TEQ     R2, #0
+00:0000005C 1100001A        	    47:  BNE     init1
+00:00000060 0600A0E3        	    48:  MOV     R0, #6
+00:00000064 4030A0E3        	    49:  MOV     R3, #0x40
+00:00000068 1E0002EF        	    50:  SWI     XOS_Module
+00:0000006C 0080BD68        	    51:  LDMVSFD R13!, {PC}
+00:00000070 00208CE5        	    52:  STR     R2, [R12]
+00:00000074 0010A0E3        	    53:  MOV     R1, #0
+00:00000078 181082E5        	    54:  STR     R1, [R2, #econetHandle]
+00:0000007C 101082E5        	    55:  STR     R1, [R2, #netTally]
+00:00000080 141082E5        	    56:  STR     R1, [R2, #netDeaths]
+00:00000084 0C1082E5        	    57:  STR     R1, [R2, #currentRank]
+00:00000088 081082E5        	    58:  STR     R1, [R2, #scoreNetwork]
+00:0000008C 041082E5        	    59:  STR     R1, [R2, #scoreStation]
+00:00000090 001082E5        	    60:  STR     R1, [R2, #scorePort]
+00:00000094 081082E5        	    61:  STR     R1, [R2, #scoreNetwork]
+00:00000098 6410A0E3        	    62:  MOV     R1, #100
+00:0000009C 001082E5        	    63:  STR     R1, [R2, #scorePort]
+00:000000A0 8010A0E3        	    64:  MOV     R1, #128
+00:000000A4 041082E5        	    65:  STR     R1, [R2, #scoreStation]
+                            	    66: init1:
+00:000000A8 6400A0E3        	    67:  MOV     R0, #100
+00:000000AC 30108FE2        	    68:  ADR     R1, TransmitData
+00:000000B0 3C0002EF        	    69:  SWI     XOS_CallEvery
+00:000000B4 0080FDE8        	    70:  LDMFD   R13!, {PC}^
+                            	    71: FinaliseModule:
+00:000000B8 00402DE9        	    72:  STMFD   R13!, {R14}
+00:000000BC 00C09CE5        	    73:  LDR     R12, [R12]
+00:000000C0 1C008FE2        	    74:  ADR     R0, TransmitData
+00:000000C4 0C10A0E1        	    75:  MOV     R1, R12
+00:000000C8 3D0002EF        	    76:  SWI     XOS_RemoveTickerEvent
+00:000000CC 18009CE5        	    77:  LDR     R0, [R12, #econetHandle]
+00:000000D0 000030E3        	    78:  TEQ     R0, #0
+00:000000D4 0800061F        	    79:  SWINE   XEconet_AbandonTransmit
+00:000000D8 0010A0E3        	    80:  MOV     R1, #0
+00:000000DC 18108CE5        	    81:  STR     R1, [R12, #econetHandle]
+00:000000E0 0080FDE8        	    82:  LDMFD   R13!, {PC}^
+                            	    83: TransmitData:
+00:000000E4 FF1F2DE9        	    84:  STMFD   R13!, {R0-R12}
+00:000000E8 0F50A0E1        	    85:  MOV     R5, PC
+00:000000EC 0340C5E3        	    86:  BIC     R4, R5, #3
+00:000000F0 03F034E3        	    87:  TEQP    R4, #3
+00:000000F4 0000A0E1        	    88:  MOV     R0, R0
+00:000000F8 20402DE9        	    89:  STMFD   R13!, {R5, R14}
+00:000000FC 30009CE5        	    90:  LDR     R0, [R12, #semaphore]
+00:00000100 000030E3        	    91:  TEQ     R0, #0
+00:00000104 5500001A        	    92:  BNE     done
+00:00000108 0100A0E3        	    93:  MOV     R0, #1
+00:0000010C 30008CE5        	    94:  STR     R0, [R12, #semaphore]
+00:00000110 18009CE5        	    95:  LDR     R0, [R12, #econetHandle]
+00:00000114 000030E3        	    96:  TEQ     R0, #0
+00:00000118 0800061F        	    97:  SWINE   XEconet_AbandonTransmit
+00:0000011C 58019FE5        	    98:  LDR     R0, cmdrName
+00:00000120 041080E2        	    99:  ADD     R1, R0, #4
+00:00000124 3A0002EF        	   100:  SWI     XOS_ValidateAddress
+00:00000128 4C00006A        	   101:  BVS     done
+00:0000012C 4B00002A        	   102:  BCS     done
+00:00000130 002090E5        	   103:  LDR     R2, [R0]
+00:00000134 20208CE5        	   104:  STR     R2, [R12, #trName]
+00:00000138 042090E5        	   105:  LDR     R2, [R0, #4]
+00:0000013C 24208CE5        	   106:  STR     R2, [R12, #trName+4]
+00:00000140 0D20A0E3        	   107:  MOV     R2, #13
+00:00000144 2720CCE5        	   108:  STRB    R2, [R12, #trName+7]
+00:00000148 2630DCE5        	   109:  LDRB    R3, [R12, #trName+6]
+00:0000014C 000033E3        	   110:  TEQ     R3, #0
+00:00000150 2620CC05        	   111:  STREQB  R2, [R12, #trName+6]
+00:00000154 2530DCE5        	   112:  LDRB    R3, [R12, #trName+5]
+00:00000158 000033E3        	   113:  TEQ     R3, #0
+00:0000015C 2520CC05        	   114:  STREQB  R2, [R12, #trName+5]
+00:00000160 2430DCE5        	   115:  LDRB    R3, [R12, #trName+4]
+00:00000164 000033E3        	   116:  TEQ     R3, #0
+00:00000168 2420CC05        	   117:  STREQB  R2, [R12, #trName+4]
+00:0000016C 2330DCE5        	   118:  LDRB    R3, [R12, #trName+3]
+00:00000170 000033E3        	   119:  TEQ     R3, #0
+00:00000174 2320CC05        	   120:  STREQB  R2, [R12, #trName+3]
+00:00000178 2230DCE5        	   121:  LDRB    R3, [R12, #trName+2]
+00:0000017C 000033E3        	   122:  TEQ     R3, #0
+00:00000180 2220CC05        	   123:  STREQB  R2, [R12, #trName+2]
+00:00000184 2130DCE5        	   124:  LDRB    R3, [R12, #trName+1]
+00:00000188 000033E3        	   125:  TEQ     R3, #0
+00:0000018C 2120CC05        	   126:  STREQB  R2, [R12, #trName+1]
+00:00000190 2030DCE5        	   127:  LDRB    R3, [R12, #trName]
+00:00000194 000033E3        	   128:  TEQ     R3, #0
+00:00000198 2020CC05        	   129:  STREQB  R2, [R12, #trName]
+00:0000019C 0130A0E3        	   130:  MOV     R3, #1
+00:000001A0 E0009FE5        	   131:  LDR     R0, cmdrLegal
+00:000001A4 0010A0E1        	   132:  MOV     R1, R0
+00:000001A8 3A0002EF        	   133:  SWI     XOS_ValidateAddress
+00:000001AC 2B00006A        	   134:  BVS     done
+00:000001B0 2A00002A        	   135:  BCS     done
+00:000001B4 002090E5        	   136:  LDR     R2, [R0]
+00:000001B8 280052E3        	   137:  CMP     R2, #0x28
+00:000001BC 0030A0D3        	   138:  MOVLE   R3, #0
+00:000001C0 FA0F52E3        	   139:  CMP     R2, #0x3E8
+00:000001C4 0330A0C3        	   140:  MOVGT   R3, #3
+00:000001C8 2830CCE5        	   141:  STRB    R3, [R12, #trLegal]
+00:000001CC B8009FE5        	   142:  LDR     R0, cmdrCondition
+00:000001D0 0010A0E1        	   143:  MOV     R1, R0
+00:000001D4 3A0002EF        	   144:  SWI     XOS_ValidateAddress
+00:000001D8 2000006A        	   145:  BVS     done
+00:000001DC 1F00002A        	   146:  BCS     done
+00:000001E0 002090E5        	   147:  LDR     R2, [R0]
+00:000001E4 012082E2        	   148:  ADD     R2, R2, #1
+00:000001E8 040052E3        	   149:  CMP     R2, #4
+00:000001EC 05005213        	   150:  CMPNE   R2, #5
+00:000001F0 0320A003        	   151:  MOVEQ   R2, #3
+00:000001F4 060052E3        	   152:  CMP     R2, #6
+00:000001F8 0020A0A3        	   153:  MOVGE   R2, #0
+00:000001FC 2920CCE5        	   154:  STRB    R2, [R12, #trCondition]
+00:00000200 1020DCE5        	   155:  LDRB    R2, [R12, #netTally]
+00:00000204 2A20CCE5        	   156:  STRB    R2, [R12, #trKill]
+00:00000208 1420DCE5        	   157:  LDRB    R2, [R12, #netDeaths]
+00:0000020C 2B20CCE5        	   158:  STRB    R2, [R12, #trDeaths]
+00:00000210 6C009FE5        	   159:  LDR     R0, cmdrCredits
+00:00000214 0010A0E1        	   160:  MOV     R1, R0
+00:00000218 3A0002EF        	   161:  SWI     XOS_ValidateAddress
+00:0000021C 0F00006A        	   162:  BVS     done
+00:00000220 0E00002A        	   163:  BCS     done
+00:00000224 002090E5        	   164:  LDR     R2, [R0]
+00:00000228 2C208CE5        	   165:  STR     R2, [R12, #trCredits]
+00:0000022C 0420A0E3        	   166:  MOV     R2, #4
+00:00000230 30208CE5        	   167:  STR     R2, [R12, #trMachine]
+00:00000234 0000A0E3        	   168:  MOV     R0, #0
+00:00000238 00109CE5        	   169:  LDR     R1, [R12, #scorePort]
+00:0000023C 04209CE5        	   170:  LDR     R2, [R12, #scoreStation]
+00:00000240 08309CE5        	   171:  LDR     R3, [R12, #scoreNetwork]
+00:00000244 20408CE2        	   172:  ADD     R4, R12, #transmitBuffer
+00:00000248 1450A0E3        	   173:  MOV     R5, #20
+00:0000024C 0160A0E3        	   174:  MOV     R6, #1
+00:00000250 0070A0E3        	   175:  MOV     R7, #0
+00:00000254 060006EF        	   176:  SWI     XEconet_StartTransmit
+00:00000258 0000A063        	   177:  MOVVS   R0, #0
+00:0000025C 18008CE5        	   178:  STR     R0, [R12, #econetHandle]
+                            	   179: done:
+00:00000260 0000A0E3        	   180:  MOV     R0, #0
+00:00000264 30008CE5        	   181:  STR     R0, [R12, #semaphore]
+00:00000268 2040BDE8        	   182:  LDMFD   R13!, {R5, R14}
+00:0000026C 00F035E3        	   183:  TEQP    R5, #0
+00:00000270 0000A0E1        	   184:  MOV     R0, R0
+00:00000274 FF1FBDE8        	   185:  LDMFD   R13!, {R0-R12}
+00:00000278 0EF0A0E1        	   186:  MOV     PC, R14
+                            	   187: cmdrName:
+00:0000027C 98A60500        	   188: .long    0x5A698
+                            	   189: cmdrRank:
+00:00000280 60A90500        	   190: .long    0x5A960
+                            	   191: cmdrCredits:
+00:00000284 4C530600        	   192: .long    0x6534C
+                            	   193: cmdrLegal:
+00:00000288 98530600        	   194: .long    0x65398
+                            	   195: cmdrCondition:
+00:0000028C A0530600        	   196: .long    0x653A0
+                            	   197: 
 
 
 Symbols by name:
 CODE                             S:00000000
-FinaliseModule                   A:00000098
+FinaliseModule                   A:000000B8
 InitialiseModule                 A:00000050
-RunScoreboard                    A:000000BC
-TransmitData                     A:000000DC
+TransmitData                     A:000000E4
 XEconet_AbandonTransmit          S:00060008
 XEconet_StartTransmit            S:00060006
-XOS_Claim                        S:0002001F
+XOS_CallEvery                    S:0002003C
 XOS_Module                       S:0002001E
-XOS_Release                      S:00020020
+XOS_RemoveTickerEvent            S:0002003D
 XOS_ValidateAddress              S:0002003A
-cmdrCondition                    A:0000021C
-cmdrCredits                      A:00000214
-cmdrLegal                        A:00000218
-cmdrName                         A:0000020C
-cmdrRank                         A:00000210
-done                             A:00000204
+cmdrCondition                    A:0000028C
+cmdrCredits                      A:00000284
+cmdrLegal                        A:00000288
+cmdrName                         A:0000027C
+cmdrRank                         A:00000280
+currentRank                      S:0000000C
+done                             A:00000260
 econetHandle                     S:00000018
 help                             A:0000002C
-init1                            A:00000094
+init1                            A:000000A8
 netDeaths                        S:00000014
 netTally                         S:00000010
 scoreNetwork                     S:00000008
 scorePort                        S:00000000
 scoreStation                     S:00000004
+semaphore                        S:00000030
 title                            A:0000001C
-trCondition                      S:00000025
-trCredits                        S:00000028
-trDeaths                         S:00000027
-trKill                           S:00000026
-trLegal                          S:00000024
-trMachine                        S:0000002C
-trName                           S:0000001C
-transmitBuffer                   S:0000001C
+trCondition                      S:00000029
+trCredits                        S:0000002C
+trDeaths                         S:0000002B
+trKill                           S:0000002A
+trLegal                          S:00000028
+trMachine                        S:00000030
+trName                           S:00000020
+transmitBuffer                   S:00000020
 
 Symbols by value:
-00000000 CODE
 00000000 scorePort
+00000000 CODE
 00000004 scoreStation
 00000008 scoreNetwork
+0000000C currentRank
 00000010 netTally
 00000014 netDeaths
 00000018 econetHandle
-0000001C transmitBuffer
-0000001C trName
 0000001C title
-00000024 trLegal
-00000025 trCondition
-00000026 trKill
-00000027 trDeaths
-00000028 trCredits
-0000002C trMachine
+00000020 transmitBuffer
+00000020 trName
+00000028 trLegal
+00000029 trCondition
+0000002A trKill
+0000002B trDeaths
+0000002C trCredits
 0000002C help
+00000030 semaphore
+00000030 trMachine
 00000050 InitialiseModule
-00000094 init1
-00000098 FinaliseModule
-000000BC RunScoreboard
-000000DC TransmitData
-00000204 done
-0000020C cmdrName
-00000210 cmdrRank
-00000214 cmdrCredits
-00000218 cmdrLegal
-0000021C cmdrCondition
+000000A8 init1
+000000B8 FinaliseModule
+000000E4 TransmitData
+00000260 done
+0000027C cmdrName
+00000280 cmdrRank
+00000284 cmdrCredits
+00000288 cmdrLegal
+0000028C cmdrCondition
 0002001E XOS_Module
-0002001F XOS_Claim
-00020020 XOS_Release
 0002003A XOS_ValidateAddress
+0002003C XOS_CallEvery
+0002003D XOS_RemoveTickerEvent
 00060006 XEconet_StartTransmit
 00060008 XEconet_AbandonTransmit

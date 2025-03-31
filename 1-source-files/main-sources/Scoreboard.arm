@@ -30,19 +30,18 @@
  XOS_Module = &2001E                \ The operating system call for claiming
                                     \ workspace for a module
 
- XOS_Claim = &2001F                 \ The operating system call to add a routine
-                                    \ to the list of those that claim a vector
-
- XOS_Release = &20020               \ The operating system call to remove a
-                                    \ routine from the list of those that claim
-                                    \ a vector
-
  XOS_ValidateAddress = &2003A       \ The operating system call to check whether
                                     \ an address range is in logical RAM
 
+ XOS_CallEvery = &2003C             \ The operating system call to call a
+                                    \ routine regularly
+
+ XOS_RemoveTickerEvent = &2003D     \ The operating system call to remove a call
+                                    \ set up by OS_CallEvery
+
  XEconet_StartTransmit = &60006     \ The operating system call to create a
                                     \ Transmit Control Block and start a
-                                    \ transmission
+                                    \ transmission over Econet
 
  XEconet_AbandonTransmit = &60008   \ The operating system call to abandon a
                                     \ Transmit Control Block and reclaim the
@@ -64,7 +63,7 @@
                                     \ where #offset is one of the following
                                     \ variables
 
- scorePort = &0                     \ The Econet port on which to talk to the
+ scorePort = &00                    \ The Econet port on which to talk to the
                                     \ scoreboard machine
                                     \
                                     \ If this is zero, the network is disabled
@@ -87,29 +86,33 @@
 
  econetHandle = &18                 \ The handle of the last packet transmission
 
- transmitBuffer = &1C               \ The tramsmit buffer
+ semaphore = &30                    \ A flag to stop us from starting a new
+                                    \ transmission before we have finished the
+                                    \ current one
 
- trName = &1C                       \ Bytes #0-7 = commander's name, terminated
+ transmitBuffer = &20               \ The tramsmit buffer
+
+ trName = &20                       \ Bytes #0-7 = commander's name, terminated
                                     \ by a carriage return
 
- trLegal = &24                      \ Byte #8 = commander's legal status
+ trLegal = &28                      \ Byte #8 = commander's legal status
                                     \ 0 = clean, 1 = offender, 2 = fugitive
 
- trCondition = &25                  \ Byte #9 = commander's status condition
+ trCondition = &29                  \ Byte #9 = commander's status condition
                                     \ 0 = docked, 1 = green, 2 = yellow, 3 = red
 
- trKill = &26                       \ Byte #10 = commander's kill count
+ trKill = &2A                       \ Byte #10 = commander's kill count
 
- trDeaths = &27                     \ Byte #11 = commander's death count
+ trDeaths = &2B                     \ Byte #11 = commander's death count
 
- trCredits = &28                    \ Bytes #12-15 = commander's credits
+ trCredits = &2C                    \ Bytes #12-15 = commander's credits
 
- trMachine = &2C                    \ Byte #16 = machine type
+ trMachine = &30                    \ Byte #16 = machine type
                                     \    0 = BBC Micro SRAM, 1 = Master,
                                     \    2 = 6502SP, 3 = BBC Micro standard
                                     \    4 = Archimedes
 
- endOfBuffer = &30
+ endOfBuffer = &34
 
 \ ******************************************************************************
 \
@@ -201,55 +204,69 @@
 
 .InitialiseModule
 
- STMFD   R13!, {R14}                \ Store the registers that we want to use on
-                                    \ the stack so they can be preserved
+ STMFD   R13!, {R14}                \ Store the return address on the stack
 
- MOV     R0, #6                     \ Reserve &40 bytes of workspace, returning
+ LDR     R2, [R12]                  \ Set R2 to the module's private word
+
+ TEQ     R2, #0                     \ If the private word is non-zero then we
+ BNE     init1                      \ have already set up the module's private
+                                    \ workspace and the private word contains
+                                    \ the address of that workspace, so jump to
+                                    \ init1 to skip the following, with the
+                                    \ address of the workspace in R2
+
+                                    \ If we get here then the module's workspace
+                                    \ has not been set up, so we do that now
+
+ MOV     R0, #6                     \ Claim &40 bytes of workspace, returning
  MOV     R3, #&40                   \ the address of the workspace in R2
  SWI     XOS_Module
 
- BVS     init1                      \ If the claim fails, jump to init1 to
-                                    \ return from the subroutine without
-                                    \ initialising the module
+ LDMVSFD R13!, {PC}                 \ If the C flag is set then the claim has
+                                    \ failed and the module can't be run, so
+                                    \ return without initialising the module
 
- STR     R2, [R12]                  \ Update the module's private word to point
-                                    \ to the claimed memory
+ STR     R2, [R12]                  \ Otherwise the claim was successful, so set
+                                    \ the module's private word to the address
+                                    \ of the claimed memory
 
-                                    \ HARD-CODED VALUES
+ MOV     R1, #0                     \ Reset the handle of the previous packet as
+ STR     R1, [R2, #econetHandle]    \ there isn't one
 
- MOV     R1, #100
+ STR     R1, [R2, #netTally]        \ Zero the kill tally
+
+ STR     R1, [R2, #netDeaths]       \ Zero the death count
+
+ STR     R1, [R2, #currentRank]     \ Reset the current rank, as we haven't yet
+                                    \ fetched it from the game
+
+ STR     R1, [R2, #scoreNetwork]    \ Zero the scoreboard network details
+ STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
 
+                                    \ >>> HARD-CODED VALUES, need to change
+                                    \ these to *-commands
+
+ STR     R1, [R2, #scoreNetwork]    \ Set scoreboard to 0.128:100
+ MOV     R1, #100
+ STR     R1, [R2, #scorePort]
  MOV     R1, #128
  STR     R1, [R2, #scoreStation]
 
- MOV     R1, #0
- STR     R1, [R2, #scoreNetwork]
-
-\LDR     R0, cmdrRank               \ Initialise currentRank with the current
-\ADR     R1, currentRank            \ kill score for the commander
-\LDR     R2, [R0]
-\STR     R2, [R1]
-
- MOV     R0, #&10                   \ Set R0 to the number of the EventV vector
-
- ADR     R1, RunScoreboard          \ Set R1 to the address of RunScoreboard
-                                    \ routine that handles the event
-
- MOV     R2, R12                    \ Set R2 = R12 so the address of the private
-                                    \ word so gets passed to the handler in R12
-
- SWI     XOS_Claim                  \ Add the RunScoreboard to the list of
-                                    \ routines claiming the event vector
-
- LDMFD   R13!, {PC}^                \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine
-
 .init1
 
- LDMFD   R13!, {PC}                 \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine,
-                                    \ but without affecting the V flag
+ MOV     R0, #100                   \ Add a call to the TransmitData routine
+ ADR     R1, TransmitData           \ into the ticker event list so it gets
+ SWI     XOS_CallEvery              \ called every one second (set as 100
+                                    \ centiseconds), to transmit the commander
+                                    \ data to the scoreboard
+                                    \
+                                    \ Note that R2 contains the address of the
+                                    \ module's private workspace, so this will
+                                    \ be sent to the routine in R12 whenever it
+                                    \ is called
+
+ LDMFD   R13!, {PC}^                \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -262,77 +279,28 @@
 
 .FinaliseModule
 
- STMFD   R13!, {R14}                \ Store the registers that we want to use on
-                                    \ the stack so they can be preserved
-
- MOV     R0, #&10                   \ Set R0 to the number of the EventV vector
-
- ADR     R1, RunScoreboard          \ Set R1 to the address of RunScoreboard
-                                    \ routine that handles the event
-
- MOV     R2, R12                    \ Set R2 = R12 so the address of the private
-                                    \ word so gets passed to the handler in R12
-
- SWI     XOS_Release                \ Remove RunScoreboard from the list of
-                                    \ routines claiming the event vector
+ STMFD   R13!, {R14}                \ Store the return address on the stack
 
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
+
+ ADR     R0, TransmitData           \ Remove the TransmitData routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
+                                    \ module's private workspace so it matches
+                                    \ the value of R2 that was used when adding
+                                    \ the routine to the ticker list)
 
  LDR     R0, [R12, #econetHandle]   \ Fetch the handle of the previous packet
 
- SWINE   XEconet_AbandonTransmit    \ If there is a handle, abandon the previous
-                                    \ transmission to recover its memory from
+ TEQ     R0, #0                     \ If there is a handle, abandon the previous
+ SWINE   XEconet_AbandonTransmit    \ transmission to recover its memory from
                                     \ the RMA
 
- LDMFD   R13!, {PC}^                \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine
+ MOV     R1, #0                     \ Reset the handle of the previous packet
+ STR     R1, [R12, #econetHandle]
 
-\ ******************************************************************************
-\
-\       Name: RunScoreboard
-\       Type: Subroutine
-\   Category: Scoreboard
-\    Summary: Check for F1 and tally increments
-\
-\ ******************************************************************************
-
-.RunScoreboard
-
- STMFD   R13!, {R0-R7}              \ Store the registers that we want to use on
-                                    \ the stack so they can be preserved
-
- LDR     R12, [R12]                 \ Set R12 to the address of the module's
-                                    \ private workspace
-
-\LDR     R0, cmdrRank               \ If the commander's tally has increased
-\ADR     R1, currentRank            \ since the last time we were here, bump up
-\LDR     R2, [R0]                   \ the kill tally and transmit the new score
-\LDR     R3, [R1]
-\CMP     R2, R3
-\ADRGT   R0, netTally
-\LDRGT   R1, [R0]
-\ADDGT   R1, R1, #1
-\STRGT   R1, [R0]
-\BGT     TransmitData
-
-\LDMFD   R13, {R0-R7}               \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine,
-                                    \ leaving them on the stack, so R0 to R2 now
-                                    \ contain the event details
-
- TEQ     R0, #11                    \ Is this the key up/down event?
-
- TEQEQ   R1, #1                     \ Is this the key down event
-
- TEQEQ   R2, #&0B                   \ Is key &0C (F11) being pressed down?
-
- BEQ     TransmitData               \ If so, jump to TransmitData
-
- LDMFD   R13!, {R0-R7}              \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine
-
- MOVS    PC, R14                    \ Return from the subroutine
+ LDMFD   R13!, {PC}^                \ Return from the subroutine
 
 \ ******************************************************************************
 \
@@ -345,15 +313,49 @@
 
 .TransmitData
 
+ STMFD   R13!, {R0-R12}             \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+                                    \ As we are calling this routine via the
+                                    \ ticker event list the system will call the
+                                    \ routine in SVC mode with interrupts
+                                    \ disabled, so for us to be able to call
+                                    \ SWIs, we need to save R14_svc on the stack
+                                    \ to prevent corruption of the return
+                                    \ address
+                                    \
+                                    \ Just to be on the safe side, we won't
+                                    \ assume the processor mode that we are in,
+                                    \ we'll just save that too so we can revert
+                                    \ when we're done
+
+ MOV     R5, PC                     \ Extract the current processor mode into R5
+ BIC     R4, R5, #3                 \ from bits 0 and 1 of the program counter
+
+ TEQP    R4, #3                     \ Switch to SVC mode
+ MOV     R0, R0
+
+ STMFD   R13!, {R5, R14}            \ Store the original processor mode (in R5)
+                                    \ and R14_svc on the stack, so we can revert
+                                    \ both of them when we are done
+
+ LDR     R0, [R12, #semaphore]      \ ???
+ TEQ     R0, #0
+ BNE     done
+
+ MOV     R0, #1                     \ ???
+ STR     R0, [R12, #semaphore]
+
  LDR     R0, [R12, #econetHandle]   \ Fetch the handle of the previous packet
 
- SWINE   XEconet_AbandonTransmit    \ If there is a handle, abandon the previous
-                                    \ transmission to recover its memory from
+ TEQ     R0, #0                     \ If there is a handle, abandon the previous
+ SWINE   XEconet_AbandonTransmit    \ transmission to recover its memory from
                                     \ the RMA
 
  LDR     R0, cmdrName               \ Check to see if the commander name is in
  ADD     R1, R0, #4                 \ logical RAM
  SWI     XOS_ValidateAddress
+
  BVS     done
  BCS     done
 
@@ -367,17 +369,27 @@
                                     \ the end
 
  LDRB    R3, [R12, #trName+6]       \ Convert any null bytes in the commander
- STRBEQ  R2, [R12, #trName+6]       \ name to carriage returns, so we know the
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+6]       \ name to carriage returns, so we know the
  LDRB    R3, [R12, #trName+5]       \ name is CR-terminated
- STRBEQ  R2, [R12, #trName+5]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+5]
  LDRB    R3, [R12, #trName+4]
- STRBEQ  R2, [R12, #trName+4]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+4]
  LDRB    R3, [R12, #trName+3]
- STRBEQ  R2, [R12, #trName+3]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+3]
  LDRB    R3, [R12, #trName+2]
- STRBEQ  R2, [R12, #trName+2]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+2]
  LDRB    R3, [R12, #trName+1]
- STRBEQ  R2, [R12, #trName+1]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName+1]
+ LDRB    R3, [R12, #trName]
+ TEQ     R3, #0
+ STREQB  R2, [R12, #trName]
+
  MOV     R3, #1                     \ Set R3 to 1 (for Offender)
 
  LDR     R0, cmdrLegal              \ Check to see if the commander's legal
@@ -453,15 +465,27 @@
 
  SWI     XEconet_StartTransmit      \ Transmit the packet
 
- ADRVC   R1, econetHandle           \ If the SWI call was successful, store the
- STRVC   R0, [R12, #econetHandle]   \ handle for this transmission
+ MOVVS   R0, #0                     \ If the call was not successful, zero the
+                                    \ handle in R0
+
+ STR     R0, [R12, #econetHandle]   \ Store the handle for this transmission
 
 .done
 
- LDMFD   R13!, {R0-R7}              \ Retrieve the registers that we stored on
-                                    \ the stack and return from the subroutine
+ MOV     R0, #0                     \ ???
+ STR     R0, [R12, #semaphore]
 
- MOVS    PC, R14                    \ Return from the subroutine
+ LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
+                                    \ the latter contains the original processor
+                                    \ mode from when we called this routine
+
+ TEQP    R5, #0                     \ Set the processor mode to the original
+ MOV     R0, R0                     \ mode in R5
+
+ LDMFD   R13!, {R0-R12}             \ Retrieve the registers that we stored on
+                                    \ the stack
+
+ MOV     PC, R14                    \ Return from the subroutine
 
 \ ******************************************************************************
 \
