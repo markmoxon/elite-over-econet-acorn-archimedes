@@ -17,7 +17,7 @@ Source: "3-assembled-output/Scoreboard.arm"
                             	    12: .set netTally, 0x10
                             	    13: .set netDeaths, 0x14
                             	    14: .set econetHandle, 0x18
-                            	    15: .set semaphore, 0x30
+                            	    15: .set semaphore, 0x1C
                             	    16: .set transmitBuffer, 0x20
                             	    17: .set trName, 0x20
                             	    18: .set trLegal, 0x28
@@ -123,11 +123,11 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:0000015C 9C119FE5        	   114:  LDR     R1, string3Match
 00:00000160 010050E1        	   115:  CMP     R0, R1
 00:00000164 5400001A        	   116:  BNE     done
-00:00000168 30009CE5        	   117:  LDR     R0, [R12, #semaphore]
+00:00000168 1C009CE5        	   117:  LDR     R0, [R12, #semaphore]
 00:0000016C 000030E3        	   118:  TEQ     R0, #0
 00:00000170 5300001A        	   119:  BNE     return
 00:00000174 0100A0E3        	   120:  MOV     R0, #1
-00:00000178 30008CE5        	   121:  STR     R0, [R12, #semaphore]
+00:00000178 1C008CE5        	   121:  STR     R0, [R12, #semaphore]
 00:0000017C 18009CE5        	   122:  LDR     R0, [R12, #econetHandle]
 00:00000180 000030E3        	   123:  TEQ     R0, #0
 00:00000184 0800061F        	   124:  SWINE   XEconet_AbandonTransmit
@@ -210,7 +210,7 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:000002B8 18008CE5        	   201:  STR     R0, [R12, #econetHandle]
                             	   202: done:
 00:000002BC 0000A0E3        	   203:  MOV     R0, #0
-00:000002C0 30008CE5        	   204:  STR     R0, [R12, #semaphore]
+00:000002C0 1C008CE5        	   204:  STR     R0, [R12, #semaphore]
                             	   205: return:
 00:000002C4 2040BDE8        	   206:  LDMFD   R13!, {R5, R14}
 00:000002C8 00F035E3        	   207:  TEQP    R5, #0
@@ -269,7 +269,7 @@ return                           A:000002C4
 scoreNetwork                     S:00000008
 scorePort                        S:00000000
 scoreStation                     S:00000004
-semaphore                        S:00000030
+semaphore                        S:0000001C
 string1Addr                      A:000002EC
 string1Match                     A:000002F0
 string2Addr                      A:000002F4
@@ -287,24 +287,24 @@ trName                           S:00000020
 transmitBuffer                   S:00000020
 
 Symbols by value:
-00000000 scorePort
 00000000 CODE
+00000000 scorePort
 00000004 scoreStation
 00000008 scoreNetwork
 0000000C currentRank
 00000010 netTally
 00000014 netDeaths
 00000018 econetHandle
+0000001C semaphore
 0000001C title
-00000020 transmitBuffer
 00000020 trName
+00000020 transmitBuffer
 00000028 trLegal
 00000029 trCondition
 0000002A trKill
 0000002B trDeaths
 0000002C trCredits
 0000002C help
-00000030 semaphore
 00000030 trMachine
 00000050 InitialiseModule
 000000A8 init1

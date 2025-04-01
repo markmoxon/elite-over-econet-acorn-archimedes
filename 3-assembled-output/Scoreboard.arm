@@ -12,7 +12,7 @@
 .set netTally, 0x10
 .set netDeaths, 0x14
 .set econetHandle, 0x18
-.set semaphore, 0x30
+.set semaphore, 0x1C
 .set transmitBuffer, 0x20
 .set trName, 0x20
 .set trLegal, 0x28

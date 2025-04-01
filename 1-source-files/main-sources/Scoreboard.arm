@@ -86,7 +86,7 @@
 
  econetHandle = &18                 \ The handle of the last packet transmission
 
- semaphore = &30                    \ A flag to stop us from starting a new
+ semaphore = &1C                    \ A flag to stop us from starting a new
                                     \ transmission before we have finished the
                                     \ current one
 
@@ -476,7 +476,7 @@
 
  LDR     R2, [R0]                   \ Set bytes #12-15 to the commander credits
  STR     R2, [R12, #trCredits]
- 
+
  MOV     R2, #4                     \ Set byte #16 to machine type 4
  STR     R2, [R12, #trMachine]
 
