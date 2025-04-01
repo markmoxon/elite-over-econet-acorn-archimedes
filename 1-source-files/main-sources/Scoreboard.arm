@@ -364,40 +364,41 @@
  LDR     R0, string1Addr            \ Check to see if the first string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R0, [R0]                   \ If the first string doesn't match, jump
- LDR     R1, string1Match           \ to done to return from the subroutine as
+ LDR     R1, string1Match           \ to skipT to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done
+ BNE     skipT
 
  LDR     R0, string2Addr            \ Check to see if the second string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R0, [R0]                   \ If the second string doesn't match, jump
- LDR     R1, string2Match           \ to done to return from the subroutine as
+ LDR     R1, string2Match           \ to skipT to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done
+ BNE     skipT
 
  LDR     R0, string3Addr            \ Check to see if the third string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R0, [R0]                   \ If the third string doesn't match, jump
- LDR     R1, string3Match           \ to done to return from the subroutine as
+ LDR     R1, string3Match           \ to skipT to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done
+ BNE     skipT
 
  LDR     R0, [R12, #semaphore]      \ If the semaphore flag is non-zero then we
  TEQ     R0, #0                     \ are already running this routine from a
- BNE     return                     \ previous ticker event, so jump to return
-                                    \ to do nothing
+ BNE     returnT                    \ previous ticker event, so jump to returnT
+                                    \ to return from the subroutine without
+                                    \ resetting the semaphore
 
  MOV     R0, #1                     \ Set the semaphore flag to a non-zero value
  STR     R0, [R12, #semaphore]      \ to indicate that there is a transmission
@@ -412,8 +413,8 @@
  LDR     R0, cmdrName               \ Check to see if the commander name is in
  ADD     R1, R0, #4                 \ logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R2, [R0]                   \ Fetch the first word of the commander
  TST     R2, #&000000FF             \ name, convert any null bytes to carriage
@@ -442,8 +443,8 @@
  LDR     R0, cmdrLegal              \ Check to see if the commander's legal
  MOV     R1, R0                     \ status is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R2, [R0]                   \ Set R2 to the commander's legal status
 
@@ -458,8 +459,8 @@
  LDR     R0, cmdrCondition          \ Check to see if the commander's condition
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R2, [R0]                   \ Set R2 to the commander's condition plus 1
  ADD     R2, R2, #1                 \ to give 1 = Green, 2 = Yellow, 3 = Red,
@@ -483,8 +484,8 @@
  LDR     R0, cmdrCredits            \ Check to see if the commander credits are
  MOV     R1, R0                     \ in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
 
  LDR     R2, [R0]                   \ Set bytes #12-15 to the commander credits
  STR     R2, [R12, #trCredits]
@@ -500,8 +501,8 @@
  LDRNE   R2, [R12, #scoreStation]   \ either of them is zero
  TEQNE   R2, #0
 
- BEQ     done                       \ If either of them is zero, jump to done to
-                                    \ skip the transmission
+ BEQ     skipT                      \ If either of them is zero, jump to skipT
+                                    \ to skip the transmission
 
                                     \ We now do the data transmission
 
@@ -528,12 +529,12 @@
 
  STR     R0, [R12, #econetHandle]   \ Store the handle for this transmission
 
-.done
+.skipT
 
  MOV     R0, #0                     \ Set the semaphore flag to zero to indicate
  STR     R0, [R12, #semaphore]      \ that we have finished this transmission
 
-.return
+.returnT
 
  LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
                                     \ the latter contains the original processor
@@ -588,41 +589,41 @@
  LDR     R0, string1Addr            \ Check to see if the first string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
 
  LDR     R0, [R0]                   \ If the first string doesn't match, jump
- LDR     R1, string1Match           \ to done2 to return from the subroutine as
+ LDR     R1, string1Match           \ to skipM to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done2
+ BNE     skipM
 
  LDR     R0, string2Addr            \ Check to see if the second string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
 
  LDR     R0, [R0]                   \ If the second string doesn't match, jump
- LDR     R1, string2Match           \ to done2 to return from the subroutine as
+ LDR     R1, string2Match           \ to skipM to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done2
+ BNE     skipM
 
  LDR     R0, string3Addr            \ Check to see if the third string to match
  MOV     R1, R0                     \ is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
 
  LDR     R0, [R0]                   \ If the third string doesn't match, jump
- LDR     R1, string3Match           \ to done2 to return from the subroutine as
+ LDR     R1, string3Match           \ to skipM to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
- BNE     done2
+ BNE     skipM
 
  LDR     R0, cmdrRank               \ Check to see if the commander's rank is in
  MOV     R1, R0                     \ logical RAM
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
 
  LDR     R1, [R12, #currentRank]    \ Set R1 to the last rank that we recorded
 
@@ -630,7 +631,7 @@
  STR     R2, [R12, #currentRank]    \ game and store it in currentRank
 
  CMN     R1, #1                     \ If this is the first rank we have fetched
- BEQ     done2                      \ then R1 will be -1, so jump to done2 to
+ BEQ     skipM                      \ then R1 will be -1, so jump to skipM to
                                     \ skip the comparison with last time
 
  CMP     R2, R1                     \ If the new rank in R2 is greater than the
@@ -638,7 +639,7 @@
  ADDGT   R3, R3, #1
  STRGT   R3, [R12, #netTally]
 
-.done2
+.skipM
 
  LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
                                     \ the latter contains the original processor

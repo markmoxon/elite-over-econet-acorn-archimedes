@@ -107,33 +107,33 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:0000011C B8029FE5        	    98:  LDR     R0, string1Addr
 00:00000120 0010A0E1        	    99:  MOV     R1, R0
 00:00000124 3A0002EF        	   100:  SWI     XOS_ValidateAddress
-00:00000128 6B00006A        	   101:  BVS     done
-00:0000012C 6A00002A        	   102:  BCS     done
+00:00000128 6B00006A        	   101:  BVS     skipT
+00:0000012C 6A00002A        	   102:  BCS     skipT
 00:00000130 000090E5        	   103:  LDR     R0, [R0]
 00:00000134 A4129FE5        	   104:  LDR     R1, string1Match
 00:00000138 010050E1        	   105:  CMP     R0, R1
-00:0000013C 6600001A        	   106:  BNE     done
+00:0000013C 6600001A        	   106:  BNE     skipT
 00:00000140 9C029FE5        	   107:  LDR     R0, string2Addr
 00:00000144 0010A0E1        	   108:  MOV     R1, R0
 00:00000148 3A0002EF        	   109:  SWI     XOS_ValidateAddress
-00:0000014C 6200006A        	   110:  BVS     done
-00:00000150 6100002A        	   111:  BCS     done
+00:0000014C 6200006A        	   110:  BVS     skipT
+00:00000150 6100002A        	   111:  BCS     skipT
 00:00000154 000090E5        	   112:  LDR     R0, [R0]
 00:00000158 88129FE5        	   113:  LDR     R1, string2Match
 00:0000015C 010050E1        	   114:  CMP     R0, R1
-00:00000160 5D00001A        	   115:  BNE     done
+00:00000160 5D00001A        	   115:  BNE     skipT
 00:00000164 80029FE5        	   116:  LDR     R0, string3Addr
 00:00000168 0010A0E1        	   117:  MOV     R1, R0
 00:0000016C 3A0002EF        	   118:  SWI     XOS_ValidateAddress
-00:00000170 5900006A        	   119:  BVS     done
-00:00000174 5800002A        	   120:  BCS     done
+00:00000170 5900006A        	   119:  BVS     skipT
+00:00000174 5800002A        	   120:  BCS     skipT
 00:00000178 000090E5        	   121:  LDR     R0, [R0]
 00:0000017C 6C129FE5        	   122:  LDR     R1, string3Match
 00:00000180 010050E1        	   123:  CMP     R0, R1
-00:00000184 5400001A        	   124:  BNE     done
+00:00000184 5400001A        	   124:  BNE     skipT
 00:00000188 1C009CE5        	   125:  LDR     R0, [R12, #semaphore]
 00:0000018C 000030E3        	   126:  TEQ     R0, #0
-00:00000190 5300001A        	   127:  BNE     return
+00:00000190 5300001A        	   127:  BNE     returnT
 00:00000194 0100A0E3        	   128:  MOV     R0, #1
 00:00000198 1C008CE5        	   129:  STR     R0, [R12, #semaphore]
 00:0000019C 18009CE5        	   130:  LDR     R0, [R12, #econetHandle]
@@ -142,8 +142,8 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:000001A8 18029FE5        	   133:  LDR     R0, cmdrName
 00:000001AC 041080E2        	   134:  ADD     R1, R0, #4
 00:000001B0 3A0002EF        	   135:  SWI     XOS_ValidateAddress
-00:000001B4 4800006A        	   136:  BVS     done
-00:000001B8 4700002A        	   137:  BCS     done
+00:000001B4 4800006A        	   136:  BVS     skipT
+00:000001B8 4700002A        	   137:  BCS     skipT
 00:000001BC 002090E5        	   138:  LDR     R2, [R0]
 00:000001C0 FF0012E3        	   139:  TST     R2, #0x000000FF
 00:000001C4 0D208203        	   140:  ORREQ   R2, R2, #0x0000000D
@@ -168,8 +168,8 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:00000210 BC019FE5        	   159:  LDR     R0, cmdrLegal
 00:00000214 0010A0E1        	   160:  MOV     R1, R0
 00:00000218 3A0002EF        	   161:  SWI     XOS_ValidateAddress
-00:0000021C 2E00006A        	   162:  BVS     done
-00:00000220 2D00002A        	   163:  BCS     done
+00:0000021C 2E00006A        	   162:  BVS     skipT
+00:00000220 2D00002A        	   163:  BCS     skipT
 00:00000224 002090E5        	   164:  LDR     R2, [R0]
 00:00000228 280052E3        	   165:  CMP     R2, #0x28
 00:0000022C 0030A0D3        	   166:  MOVLE   R3, #0
@@ -179,8 +179,8 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:0000023C 94019FE5        	   170:  LDR     R0, cmdrCondition
 00:00000240 0010A0E1        	   171:  MOV     R1, R0
 00:00000244 3A0002EF        	   172:  SWI     XOS_ValidateAddress
-00:00000248 2300006A        	   173:  BVS     done
-00:0000024C 2200002A        	   174:  BCS     done
+00:00000248 2300006A        	   173:  BVS     skipT
+00:0000024C 2200002A        	   174:  BCS     skipT
 00:00000250 002090E5        	   175:  LDR     R2, [R0]
 00:00000254 012082E2        	   176:  ADD     R2, R2, #1
 00:00000258 040052E3        	   177:  CMP     R2, #4
@@ -196,8 +196,8 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:00000280 48019FE5        	   187:  LDR     R0, cmdrCredits
 00:00000284 0010A0E1        	   188:  MOV     R1, R0
 00:00000288 3A0002EF        	   189:  SWI     XOS_ValidateAddress
-00:0000028C 1200006A        	   190:  BVS     done
-00:00000290 1100002A        	   191:  BCS     done
+00:0000028C 1200006A        	   190:  BVS     skipT
+00:00000290 1100002A        	   191:  BCS     skipT
 00:00000294 002090E5        	   192:  LDR     R2, [R0]
 00:00000298 2C208CE5        	   193:  STR     R2, [R12, #trCredits]
 00:0000029C 0420A0E3        	   194:  MOV     R2, #4
@@ -206,7 +206,7 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:000002A8 000031E3        	   197:  TEQ     R1, #0
 00:000002AC 04209C15        	   198:  LDRNE   R2, [R12, #scoreStation]
 00:000002B0 00003213        	   199:  TEQNE   R2, #0
-00:000002B4 0800000A        	   200:  BEQ     done
+00:000002B4 0800000A        	   200:  BEQ     skipT
 00:000002B8 0000A0E3        	   201:  MOV     R0, #0
 00:000002BC 08309CE5        	   202:  LDR     R3, [R12, #scoreNetwork]
 00:000002C0 20408CE2        	   203:  ADD     R4, R12, #transmitBuffer
@@ -216,10 +216,10 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:000002D0 060006EF        	   207:  SWI     XEconet_StartTransmit
 00:000002D4 0000A063        	   208:  MOVVS   R0, #0
 00:000002D8 18008CE5        	   209:  STR     R0, [R12, #econetHandle]
-                            	   210: done:
+                            	   210: skipT:
 00:000002DC 0000A0E3        	   211:  MOV     R0, #0
 00:000002E0 1C008CE5        	   212:  STR     R0, [R12, #semaphore]
-                            	   213: return:
+                            	   213: returnT:
 00:000002E4 2040BDE8        	   214:  LDMFD   R13!, {R5, R14}
 00:000002E8 00F035E3        	   215:  TEQP    R5, #0
 00:000002EC 0000A0E1        	   216:  MOV     R0, R0
@@ -235,45 +235,45 @@ Source: "3-assembled-output/Scoreboard.arm"
 00:00000310 C4009FE5        	   226:  LDR     R0, string1Addr
 00:00000314 0010A0E1        	   227:  MOV     R1, R0
 00:00000318 3A0002EF        	   228:  SWI     XOS_ValidateAddress
-00:0000031C 2400006A        	   229:  BVS     done2
-00:00000320 2300002A        	   230:  BCS     done2
+00:0000031C 2400006A        	   229:  BVS     skipM
+00:00000320 2300002A        	   230:  BCS     skipM
 00:00000324 000090E5        	   231:  LDR     R0, [R0]
 00:00000328 B0109FE5        	   232:  LDR     R1, string1Match
 00:0000032C 010050E1        	   233:  CMP     R0, R1
-00:00000330 1F00001A        	   234:  BNE     done2
+00:00000330 1F00001A        	   234:  BNE     skipM
 00:00000334 A8009FE5        	   235:  LDR     R0, string2Addr
 00:00000338 0010A0E1        	   236:  MOV     R1, R0
 00:0000033C 3A0002EF        	   237:  SWI     XOS_ValidateAddress
-00:00000340 1B00006A        	   238:  BVS     done2
-00:00000344 1A00002A        	   239:  BCS     done2
+00:00000340 1B00006A        	   238:  BVS     skipM
+00:00000344 1A00002A        	   239:  BCS     skipM
 00:00000348 000090E5        	   240:  LDR     R0, [R0]
 00:0000034C 94109FE5        	   241:  LDR     R1, string2Match
 00:00000350 010050E1        	   242:  CMP     R0, R1
-00:00000354 1600001A        	   243:  BNE     done2
+00:00000354 1600001A        	   243:  BNE     skipM
 00:00000358 8C009FE5        	   244:  LDR     R0, string3Addr
 00:0000035C 0010A0E1        	   245:  MOV     R1, R0
 00:00000360 3A0002EF        	   246:  SWI     XOS_ValidateAddress
-00:00000364 1200006A        	   247:  BVS     done2
-00:00000368 1100002A        	   248:  BCS     done2
+00:00000364 1200006A        	   247:  BVS     skipM
+00:00000368 1100002A        	   248:  BCS     skipM
 00:0000036C 000090E5        	   249:  LDR     R0, [R0]
 00:00000370 78109FE5        	   250:  LDR     R1, string3Match
 00:00000374 010050E1        	   251:  CMP     R0, R1
-00:00000378 0D00001A        	   252:  BNE     done2
+00:00000378 0D00001A        	   252:  BNE     skipM
 00:0000037C 48009FE5        	   253:  LDR     R0, cmdrRank
 00:00000380 0010A0E1        	   254:  MOV     R1, R0
 00:00000384 3A0002EF        	   255:  SWI     XOS_ValidateAddress
-00:00000388 0900006A        	   256:  BVS     done2
-00:0000038C 0800002A        	   257:  BCS     done2
+00:00000388 0900006A        	   256:  BVS     skipM
+00:0000038C 0800002A        	   257:  BCS     skipM
 00:00000390 0C109CE5        	   258:  LDR     R1, [R12, #currentRank]
 00:00000394 002090E5        	   259:  LDR     R2, [R0]
 00:00000398 0C208CE5        	   260:  STR     R2, [R12, #currentRank]
 00:0000039C 010071E3        	   261:  CMN     R1, #1
-00:000003A0 0300000A        	   262:  BEQ     done2
+00:000003A0 0300000A        	   262:  BEQ     skipM
 00:000003A4 010052E1        	   263:  CMP     R2, R1
 00:000003A8 10309CC5        	   264:  LDRGT   R3, [R12, #netTally]
 00:000003AC 013083C2        	   265:  ADDGT   R3, R3, #1
 00:000003B0 10308CC5        	   266:  STRGT   R3, [R12, #netTally]
-                            	   267: done2:
+                            	   267: skipM:
 00:000003B4 2040BDE8        	   268:  LDMFD   R13!, {R5, R14}
 00:000003B8 00F035E3        	   269:  TEQP    R5, #0
 00:000003BC 0000A0E1        	   270:  MOV     R0, R0
@@ -322,18 +322,18 @@ cmdrLegal                        A:000003D4
 cmdrName                         A:000003C8
 cmdrRank                         A:000003CC
 currentRank                      S:0000000C
-done                             A:000002DC
-done2                            A:000003B4
 econetHandle                     S:00000018
 help                             A:0000002C
 init1                            A:000000B0
 netDeaths                        S:00000014
 netTally                         S:00000010
-return                           A:000002E4
+returnT                          A:000002E4
 scoreNetwork                     S:00000008
 scorePort                        S:00000000
 scoreStation                     S:00000004
 semaphore                        S:0000001C
+skipM                            A:000003B4
+skipT                            A:000002DC
 string1Addr                      A:000003DC
 string1Match                     A:000003E0
 string2Addr                      A:000003E4
@@ -351,16 +351,16 @@ trName                           S:00000020
 transmitBuffer                   S:00000020
 
 Symbols by value:
-00000000 CODE
 00000000 scorePort
+00000000 CODE
 00000004 scoreStation
 00000008 scoreNetwork
 0000000C currentRank
 00000010 netTally
 00000014 netDeaths
 00000018 econetHandle
-0000001C semaphore
 0000001C title
+0000001C semaphore
 00000020 trName
 00000020 transmitBuffer
 00000028 trLegal
@@ -374,10 +374,10 @@ Symbols by value:
 000000B0 init1
 000000CC FinaliseModule
 00000104 TransmitData
-000002DC done
-000002E4 return
+000002DC skipT
+000002E4 returnT
 000002F8 MonitorRank
-000003B4 done2
+000003B4 skipM
 000003C8 cmdrName
 000003CC cmdrRank
 000003D0 cmdrCredits

@@ -98,33 +98,33 @@ TransmitData:
  LDR     R0, string1Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R0, [R0]
  LDR     R1, string1Match
  CMP     R0, R1
- BNE     done
+ BNE     skipT
  LDR     R0, string2Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R0, [R0]
  LDR     R1, string2Match
  CMP     R0, R1
- BNE     done
+ BNE     skipT
  LDR     R0, string3Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R0, [R0]
  LDR     R1, string3Match
  CMP     R0, R1
- BNE     done
+ BNE     skipT
  LDR     R0, [R12, #semaphore]
  TEQ     R0, #0
- BNE     return
+ BNE     returnT
  MOV     R0, #1
  STR     R0, [R12, #semaphore]
  LDR     R0, [R12, #econetHandle]
@@ -133,8 +133,8 @@ TransmitData:
  LDR     R0, cmdrName
  ADD     R1, R0, #4
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R2, [R0]
  TST     R2, #0x000000FF
  ORREQ   R2, R2, #0x0000000D
@@ -159,8 +159,8 @@ TransmitData:
  LDR     R0, cmdrLegal
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R2, [R0]
  CMP     R2, #0x28
  MOVLE   R3, #0
@@ -170,8 +170,8 @@ TransmitData:
  LDR     R0, cmdrCondition
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R2, [R0]
  ADD     R2, R2, #1
  CMP     R2, #4
@@ -187,8 +187,8 @@ TransmitData:
  LDR     R0, cmdrCredits
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done
- BCS     done
+ BVS     skipT
+ BCS     skipT
  LDR     R2, [R0]
  STR     R2, [R12, #trCredits]
  MOV     R2, #4
@@ -197,7 +197,7 @@ TransmitData:
  TEQ     R1, #0
  LDRNE   R2, [R12, #scoreStation]
  TEQNE   R2, #0
- BEQ     done
+ BEQ     skipT
  MOV     R0, #0
  LDR     R3, [R12, #scoreNetwork]
  ADD     R4, R12, #transmitBuffer
@@ -207,10 +207,10 @@ TransmitData:
  SWI     XEconet_StartTransmit
  MOVVS   R0, #0
  STR     R0, [R12, #econetHandle]
-done:
+skipT:
  MOV     R0, #0
  STR     R0, [R12, #semaphore]
-return:
+returnT:
  LDMFD   R13!, {R5, R14}
  TEQP    R5, #0
  MOV     R0, R0
@@ -226,45 +226,45 @@ MonitorRank:
  LDR     R0, string1Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
  LDR     R0, [R0]
  LDR     R1, string1Match
  CMP     R0, R1
- BNE     done2
+ BNE     skipM
  LDR     R0, string2Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
  LDR     R0, [R0]
  LDR     R1, string2Match
  CMP     R0, R1
- BNE     done2
+ BNE     skipM
  LDR     R0, string3Addr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
  LDR     R0, [R0]
  LDR     R1, string3Match
  CMP     R0, R1
- BNE     done2
+ BNE     skipM
  LDR     R0, cmdrRank
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     done2
- BCS     done2
+ BVS     skipM
+ BCS     skipM
  LDR     R1, [R12, #currentRank]
  LDR     R2, [R0]
  STR     R2, [R12, #currentRank]
  CMN     R1, #1
- BEQ     done2
+ BEQ     skipM
  CMP     R2, R1
  LDRGT   R3, [R12, #netTally]
  ADDGT   R3, R3, #1
  STRGT   R3, [R12, #netTally]
-done2:
+skipM:
  LDMFD   R13!, {R5, R14}
  TEQP    R5, #0
  MOV     R0, R0
