@@ -128,32 +128,25 @@ TransmitData:
  BVS     done
  BCS     done
  LDR     R2, [R0]
+ TST     R2, #0x000000FF
+ ORREQ   R2, R2, #0x0000000D
+ TST     R2, #0x0000FF00
+ ORREQ   R2, R2, #0x00000D00
+ TST     R2, #0x00FF0000
+ ORREQ   R2, R2, #0x000D0000
+ TST     R2, #0xFF000000
+ ORREQ   R2, R2, #0x0D000000
  STR     R2, [R12, #trName]
  LDR     R2, [R0, #4]
+ TST     R2, #0x000000FF
+ ORREQ   R2, R2, #0x0000000D
+ TST     R2, #0x0000FF00
+ ORREQ   R2, R2, #0x00000D00
+ TST     R2, #0x00FF0000
+ ORREQ   R2, R2, #0x000D0000
+ AND     R2, R2, #0x00FFFFFF
+ ORR     R2, R2, #0x0D000000
  STR     R2, [R12, #trName+4]
- MOV     R2, #13
- STRB    R2, [R12, #trName+7]
- LDRB    R3, [R12, #trName+6]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+6]
- LDRB    R3, [R12, #trName+5]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+5]
- LDRB    R3, [R12, #trName+4]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+4]
- LDRB    R3, [R12, #trName+3]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+3]
- LDRB    R3, [R12, #trName+2]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+2]
- LDRB    R3, [R12, #trName+1]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+1]
- LDRB    R3, [R12, #trName]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName]
  MOV     R3, #1
  LDR     R0, cmdrLegal
  MOV     R1, R0

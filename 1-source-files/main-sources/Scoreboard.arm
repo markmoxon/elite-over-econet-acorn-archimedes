@@ -403,36 +403,27 @@
  BVS     done
  BCS     done
 
- LDR     R2, [R0]                   \ Set bytes #0-7 of the buffer to the
- STR     R2, [R12, #trName]         \ null-terminated commander name (which
- LDR     R2, [R0, #4]               \ may be longer, so we just fetch the first
- STR     R2, [R12, #trName+4]       \ eight characters)
+ LDR     R2, [R0]                   \ Fetch the first word of the commander
+ TST     R2, #&000000FF             \ name, convert any null bytes to carriage
+ ORREQ   R2, R2, #&0000000D         \ returns and store the result in trName
+ TST     R2, #&0000FF00
+ ORREQ   R2, R2, #&00000D00
+ TST     R2, #&00FF0000
+ ORREQ   R2, R2, #&000D0000
+ TST     R2, #&FF000000
+ ORREQ   R2, R2, #&0D000000
+ STR     R2, [R12, #trName]
 
- MOV     R2, #13                    \ Ensure the commander name is no more than
- STRB    R2, [R12, #trName+7]       \ seven characters with a carriage return at
-                                    \ the end
-
- LDRB    R3, [R12, #trName+6]       \ Convert any null bytes in the commander
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+6]       \ name to carriage returns, so we know the
- LDRB    R3, [R12, #trName+5]       \ name is CR-terminated
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+5]
- LDRB    R3, [R12, #trName+4]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+4]
- LDRB    R3, [R12, #trName+3]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+3]
- LDRB    R3, [R12, #trName+2]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+2]
- LDRB    R3, [R12, #trName+1]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName+1]
- LDRB    R3, [R12, #trName]
- TEQ     R3, #0
- STREQB  R2, [R12, #trName]
+ LDR     R2, [R0, #4]               \ Fetch the second word of the commander
+ TST     R2, #&000000FF             \ name, convert any null bytes to carriage
+ ORREQ   R2, R2, #&0000000D         \ returns and store the result in trName,
+ TST     R2, #&0000FF00             \ making sure the last character is always
+ ORREQ   R2, R2, #&00000D00         \ a carriage return
+ TST     R2, #&00FF0000
+ ORREQ   R2, R2, #&000D0000
+ AND     R2, R2, #&00FFFFFF
+ ORR     R2, R2, #&0D000000
+ STR     R2, [R12, #trName+4]
 
  MOV     R3, #1                     \ Set R3 to 1 (for Offender)
 
@@ -469,7 +460,7 @@
  CMP     R2, #6                     \ If condition is Docked, set R2 = 0
  MOVGE   R2, #0
 
- STRB    R2, [R12, #trCondition]    \ Set byte #9 to the legal status
+ STRB    R2, [R12, #trCondition]    \ Set byte #9 to the condition
 
  LDRB    R2, [R12, #netTally]       \ Set byte #10 to the kill tally
  STRB    R2, [R12, #trKill]
@@ -549,7 +540,7 @@
 \       Name: Archimedes Elite addresses (version 1.14)
 \       Type: Workspace
 \   Category: Econet
-\    Summary: Addresses for the commander data in Elite
+\    Summary: Addresses for the commander data and version strings in Elite
 \
 \ ******************************************************************************
 
@@ -579,7 +570,7 @@
 
 .string1Match
 
- EQUD    &4E495247                  \ GRIN
+ EQUD    &4E495247                  \ GRIN (part of "CLIVE GRINGRAS")
 
 .string2Addr
 
@@ -587,7 +578,7 @@
 
 .string2Match
 
- EQUD    &45525241                  \ ARRE
+ EQUD    &45525241                  \ ARRE (part of "WARREN BURCH")
 
 .string3Addr
 
@@ -595,7 +586,7 @@
 
 .string3Match
 
- EQUD    &34312E31                  \ 1.14
+ EQUD    &34312E31                  \ 1.14 (part of "Version 1.14")
 
 \ ******************************************************************************
 \
