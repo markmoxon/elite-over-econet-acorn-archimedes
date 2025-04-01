@@ -95,11 +95,18 @@
  trName = &20                       \ Bytes #0-7 = commander's name, terminated
                                     \ by a carriage return
 
- trLegal = &28                      \ Byte #8 = commander's legal status
-                                    \ 0 = clean, 1 = offender, 2 = fugitive
+ trLegal = &28                      \ Byte #8 = commander's legal status:
+                                    \
+                                    \   0 = Clean
+                                    \   1 = Offender
+                                    \   2 = Fugitive
 
- trCondition = &29                  \ Byte #9 = commander's status condition
-                                    \ 0 = docked, 1 = green, 2 = yellow, 3 = red
+ trCondition = &29                  \ Byte #9 = commander's status condition:
+                                    \
+                                    \   0 = Docked
+                                    \   1 = Green
+                                    \   2 = Yellow
+                                    \   3 = Red
 
  trKill = &2A                       \ Byte #10 = commander's kill count
 
@@ -107,12 +114,15 @@
 
  trCredits = &2C                    \ Bytes #12-15 = commander's credits
 
- trMachine = &30                    \ Byte #16 = machine type
-                                    \    0 = BBC Micro SRAM, 1 = Master,
-                                    \    2 = 6502SP, 3 = BBC Micro standard
-                                    \    4 = Archimedes
+ trMachine = &30                    \ Byte #16 = machine type:
+                                    \
+                                    \   0 = BBC Micro SRAM
+                                    \   1 = Master
+                                    \   2 = 6502SP
+                                    \   3 = BBC Micro standard
+                                    \   4 = Archimedes
 
- endOfBuffer = &34
+ endOfBuffer = &34                  \ End of transmit buffer
 
 \ ******************************************************************************
 \
@@ -339,12 +349,47 @@
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
- LDR     R0, [R12, #semaphore]      \ ???
- TEQ     R0, #0
+ LDR     R0, string1Addr            \ Check to see if the first string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+
+ LDR     R0, [R0]                   \ If the first string doesn't match, jump
+ LDR     R1, string1Match           \ to done to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
  BNE     done
 
- MOV     R0, #1                     \ ???
- STR     R0, [R12, #semaphore]
+ LDR     R0, string2Addr            \ Check to see if the second string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+
+ LDR     R0, [R0]                   \ If the second string doesn't match, jump
+ LDR     R1, string2Match           \ to done to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
+ BNE     done
+
+ LDR     R0, string3Addr            \ Check to see if the third string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+
+ LDR     R0, [R0]                   \ If the third string doesn't match, jump
+ LDR     R1, string3Match           \ to done to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
+ BNE     done
+
+ LDR     R0, [R12, #semaphore]      \ If the semaphore flag is non-zero then we
+ TEQ     R0, #0                     \ are already running this routine from a
+ BNE     return                     \ previous ticker event, so jump to return
+                                    \ to do nothing
+
+ MOV     R0, #1                     \ Set the semaphore flag to a non-zero value
+ STR     R0, [R12, #semaphore]      \ to indicate that there is a transmission
+                                    \ in progress
 
  LDR     R0, [R12, #econetHandle]   \ Fetch the handle of the previous packet
 
@@ -355,7 +400,6 @@
  LDR     R0, cmdrName               \ Check to see if the commander name is in
  ADD     R1, R0, #4                 \ logical RAM
  SWI     XOS_ValidateAddress
-
  BVS     done
  BCS     done
 
@@ -445,13 +489,24 @@
  MOV     R2, #4                     \ Set byte #16 to machine type 4
  STR     R2, [R12, #trMachine]
 
+                                    \ We now check to see if the transmission
+                                    \ is correctly configured
+
+ LDR     R1, [R12, #scorePort]      \ Set R1 to the port number and R2 to the
+ TEQ     R1, #0                     \ station number, setting the Z flag if
+ LDRNE   R2, [R12, #scoreStation]   \ either of them is zero
+ TEQNE   R2, #0
+
+ BEQ     done                       \ If either of them is zero, jump to done to
+                                    \ skip the transmission
+
                                     \ We now do the data transmission
 
  MOV     R0, #0                     \ Set R0 to the flag byte
 
- LDR     R1, [R12, #scorePort]      \ Set R1 to the port number
+                                    \ R1 is already set to the port number
 
- LDR     R2, [R12, #scoreStation]   \ Set R2 to the station number
+                                    \ R2 is already set to the station number
 
  LDR     R3, [R12, #scoreNetwork]   \ Set R3 to the network number
 
@@ -472,8 +527,10 @@
 
 .done
 
- MOV     R0, #0                     \ ???
- STR     R0, [R12, #semaphore]
+ MOV     R0, #0                     \ Set the semaphore flag to zero to indicate
+ STR     R0, [R12, #semaphore]      \ that we have finished this transmission
+
+.return
 
  LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
                                     \ the latter contains the original processor
@@ -498,23 +555,47 @@
 
 .cmdrName
 
- EQUD    &5A698
+ EQUD    &0005A698
 
 .cmdrRank
 
- EQUD    &5A960
+ EQUD    &0005A960
 
 .cmdrCredits
 
- EQUD    &6534C
+ EQUD    &0006534C
 
 .cmdrLegal
 
- EQUD    &65398
+ EQUD    &00065398
 
 .cmdrCondition
 
- EQUD    &653A0
+ EQUD    &000653A0
+
+.string1Addr
+
+ EQUD    &0001AF14
+
+.string1Match
+
+ EQUD    &4E495247                  \ GRIN
+
+.string2Addr
+
+ EQUD    &0001AF00
+
+.string2Match
+
+ EQUD    &45525241                  \ ARRE
+
+.string3Addr
+
+ EQUD    &00071508
+
+.string3Match
+
+ EQUD    &34312E31                  \ 1.14
 
 \ ******************************************************************************
 \

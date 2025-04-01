@@ -87,9 +87,36 @@ TransmitData:
  TEQP    R4, #3
  MOV     R0, R0
  STMFD   R13!, {R5, R14}
+ LDR     R0, string1Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+ LDR     R0, [R0]
+ LDR     R1, string1Match
+ CMP     R0, R1
+ BNE     done
+ LDR     R0, string2Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+ LDR     R0, [R0]
+ LDR     R1, string2Match
+ CMP     R0, R1
+ BNE     done
+ LDR     R0, string3Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done
+ BCS     done
+ LDR     R0, [R0]
+ LDR     R1, string3Match
+ CMP     R0, R1
+ BNE     done
  LDR     R0, [R12, #semaphore]
  TEQ     R0, #0
- BNE     done
+ BNE     return
  MOV     R0, #1
  STR     R0, [R12, #semaphore]
  LDR     R0, [R12, #econetHandle]
@@ -165,9 +192,12 @@ TransmitData:
  STR     R2, [R12, #trCredits]
  MOV     R2, #4
  STR     R2, [R12, #trMachine]
- MOV     R0, #0
  LDR     R1, [R12, #scorePort]
- LDR     R2, [R12, #scoreStation]
+ TEQ     R1, #0
+ LDRNE   R2, [R12, #scoreStation]
+ TEQNE   R2, #0
+ BEQ     done
+ MOV     R0, #0
  LDR     R3, [R12, #scoreNetwork]
  ADD     R4, R12, #transmitBuffer
  MOV     R5, #20
@@ -179,18 +209,31 @@ TransmitData:
 done:
  MOV     R0, #0
  STR     R0, [R12, #semaphore]
+return:
  LDMFD   R13!, {R5, R14}
  TEQP    R5, #0
  MOV     R0, R0
  LDMFD   R13!, {R0-R12}
  MOV     PC, R14
 cmdrName:
-.long    0x5A698
+.long    0x0005A698
 cmdrRank:
-.long    0x5A960
+.long    0x0005A960
 cmdrCredits:
-.long    0x6534C
+.long    0x0006534C
 cmdrLegal:
-.long    0x65398
+.long    0x00065398
 cmdrCondition:
-.long    0x653A0
+.long    0x000653A0
+string1Addr:
+.long    0x0001AF14
+string1Match:
+.long    0x4E495247
+string2Addr:
+.long    0x0001AF00
+string2Match:
+.long    0x45525241
+string3Addr:
+.long    0x00071508
+string3Match:
+.long    0x34312E31
