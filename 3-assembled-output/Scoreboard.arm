@@ -54,10 +54,12 @@ InitialiseModule:
  STR     R1, [R2, #econetHandle]
  STR     R1, [R2, #netTally]
  STR     R1, [R2, #netDeaths]
- STR     R1, [R2, #currentRank]
  STR     R1, [R2, #scoreNetwork]
  STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
+ MVN     R1, #0
+ STR     R1, [R2, #currentRank]
+ MOV     R1, #0
  STR     R1, [R2, #scoreNetwork]
  MOV     R1, #100
  STR     R1, [R2, #scorePort]
@@ -67,11 +69,17 @@ init1:
  MOV     R0, #100
  ADR     R1, TransmitData
  SWI     XOS_CallEvery
+ MOV     R0, #50
+ ADR     R1, MonitorRank
+ SWI     XOS_CallEvery
  LDMFD   R13!, {PC}^
 FinaliseModule:
  STMFD   R13!, {R14}
  LDR     R12, [R12]
  ADR     R0, TransmitData
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
+ ADR     R0, MonitorRank
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
  LDR     R0, [R12, #econetHandle]
@@ -203,6 +211,60 @@ done:
  MOV     R0, #0
  STR     R0, [R12, #semaphore]
 return:
+ LDMFD   R13!, {R5, R14}
+ TEQP    R5, #0
+ MOV     R0, R0
+ LDMFD   R13!, {R0-R12}
+ MOV     PC, R14
+MonitorRank:
+ STMFD   R13!, {R0-R12}
+ MOV     R5, PC
+ BIC     R4, R5, #3
+ TEQP    R4, #3
+ MOV     R0, R0
+ STMFD   R13!, {R5, R14}
+ LDR     R0, string1Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+ LDR     R0, [R0]
+ LDR     R1, string1Match
+ CMP     R0, R1
+ BNE     done2
+ LDR     R0, string2Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+ LDR     R0, [R0]
+ LDR     R1, string2Match
+ CMP     R0, R1
+ BNE     done2
+ LDR     R0, string3Addr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+ LDR     R0, [R0]
+ LDR     R1, string3Match
+ CMP     R0, R1
+ BNE     done2
+ LDR     R0, cmdrRank
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+ LDR     R1, [R12, #currentRank]
+ LDR     R2, [R0]
+ STR     R2, [R12, #currentRank]
+ CMN     R1, #1
+ BEQ     done2
+ CMP     R2, R1
+ LDRGT   R3, [R12, #netTally]
+ ADDGT   R3, R3, #1
+ STRGT   R3, [R12, #netTally]
+done2:
  LDMFD   R13!, {R5, R14}
  TEQP    R5, #0
  MOV     R0, R0

@@ -247,17 +247,20 @@
 
  STR     R1, [R2, #netDeaths]       \ Zero the death count
 
- STR     R1, [R2, #currentRank]     \ Reset the current rank, as we haven't yet
-                                    \ fetched it from the game
-
  STR     R1, [R2, #scoreNetwork]    \ Zero the scoreboard network details
  STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
 
+ MVN     R1, #0
+ STR     R1, [R2, #currentRank]     \ Set the current rank to -1, to indicate
+                                    \ that we haven't yet fetched it from the
+                                    \ game
+
                                     \ >>> HARD-CODED VALUES, need to change
                                     \ these to *-commands
 
- STR     R1, [R2, #scoreNetwork]    \ Set scoreboard to 0.128:100
+ MOV     R1, #0                     \ Set scoreboard to 0.128:100
+ STR     R1, [R2, #scoreNetwork]
  MOV     R1, #100
  STR     R1, [R2, #scorePort]
  MOV     R1, #128
@@ -275,6 +278,11 @@
                                     \ module's private workspace, so this will
                                     \ be sent to the routine in R12 whenever it
                                     \ is called
+
+ MOV     R0, #50                    \ Add a call to the MonitorRank routine
+ ADR     R1, MonitorRank            \ into the ticker event list so it gets
+ SWI     XOS_CallEvery              \ called twice each second (i.e. every 50
+                                    \ centiseconds)
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
@@ -300,6 +308,10 @@
                                     \ module's private workspace so it matches
                                     \ the value of R2 that was used when adding
                                     \ the routine to the ticker list)
+
+ ADR     R0, MonitorRank            \ Remove the MonitorRank routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called
 
  LDR     R0, [R12, #econetHandle]   \ Fetch the handle of the previous packet
 
@@ -534,6 +546,112 @@
                                     \ the stack
 
  MOV     PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: MonitorRank
+\       Type: Subroutine
+\   Category: Scoreboard
+\    Summary: Check the commander's rank and increase the net tally if it has
+\             increased since last time
+\
+\ ******************************************************************************
+
+.MonitorRank
+
+ STMFD   R13!, {R0-R12}             \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+                                    \ As we are calling this routine via the
+                                    \ ticker event list the system will call the
+                                    \ routine in SVC mode with interrupts
+                                    \ disabled, so for us to be able to call
+                                    \ SWIs, we need to save R14_svc on the stack
+                                    \ to prevent corruption of the return
+                                    \ address
+                                    \
+                                    \ Just to be on the safe side, we won't
+                                    \ assume the processor mode that we are in,
+                                    \ we'll just save that too so we can revert
+                                    \ when we're done
+
+ MOV     R5, PC                     \ Extract the current processor mode into R5
+ BIC     R4, R5, #3                 \ from bits 0 and 1 of the program counter
+
+ TEQP    R4, #3                     \ Switch to SVC mode
+ MOV     R0, R0
+
+ STMFD   R13!, {R5, R14}            \ Store the original processor mode (in R5)
+                                    \ and R14_svc on the stack, so we can revert
+                                    \ both of them when we are done
+
+ LDR     R0, string1Addr            \ Check to see if the first string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+
+ LDR     R0, [R0]                   \ If the first string doesn't match, jump
+ LDR     R1, string1Match           \ to done2 to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
+ BNE     done2
+
+ LDR     R0, string2Addr            \ Check to see if the second string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+
+ LDR     R0, [R0]                   \ If the second string doesn't match, jump
+ LDR     R1, string2Match           \ to done2 to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
+ BNE     done2
+
+ LDR     R0, string3Addr            \ Check to see if the third string to match
+ MOV     R1, R0                     \ is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+
+ LDR     R0, [R0]                   \ If the third string doesn't match, jump
+ LDR     R1, string3Match           \ to done2 to return from the subroutine as
+ CMP     R0, R1                     \ Elite is not paged in
+ BNE     done2
+
+ LDR     R0, cmdrRank               \ Check to see if the commander's rank is in
+ MOV     R1, R0                     \ logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     done2
+ BCS     done2
+
+ LDR     R1, [R12, #currentRank]    \ Set R1 to the last rank that we recorded
+
+ LDR     R2, [R0]                   \ Set R2 to the commander's rank from the
+ STR     R2, [R12, #currentRank]    \ game and store it in currentRank
+
+ CMN     R1, #1                     \ If this is the first rank we have fetched
+ BEQ     done2                      \ then R1 will be -1, so jump to done2 to
+                                    \ skip the comparison with last time
+
+ CMP     R2, R1                     \ If the new rank in R2 is greater than the
+ LDRGT   R3, [R12, #netTally]       \ previous rank in R1, increase the kill tally
+ ADDGT   R3, R3, #1
+ STRGT   R3, [R12, #netTally]
+
+.done2
+
+ LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
+                                    \ the latter contains the original processor
+                                    \ mode from when we called this routine
+
+ TEQP    R5, #0                     \ Set the processor mode to the original
+ MOV     R0, R0                     \ mode in R5
+
+ LDMFD   R13!, {R0-R12}             \ Retrieve the registers that we stored on
+                                    \ the stack
+
+ MOV     PC, R14                    \ Return from the subroutine
+
 
 \ ******************************************************************************
 \
