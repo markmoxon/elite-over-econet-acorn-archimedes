@@ -74,12 +74,12 @@ def convert(input_file, output_file):
     output_file.write(" =pass%\n")
 
 
-print("Converting 1-source-files/Scoreboard.arm")
+print("Converting 1-source-files/EliteOverEconet.arm")
 
-source_file = open("1-source-files/main-sources/Scoreboard.arm", "r")
-basic_file = open("3-assembled-output/Scoreboard,fff", "w")
+source_file = open("1-source-files/main-sources/EliteOverEconet.arm", "r")
+basic_file = open("3-assembled-output/EliteOverEconet,fff", "w")
 convert(source_file, basic_file)
 source_file.close()
 basic_file.close()
 
-print("3-assembled-output/Scoreboard,fff file saved")
+print("3-assembled-output/EliteOverEconet,fff file saved")

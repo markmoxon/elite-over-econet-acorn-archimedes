@@ -1,6 +1,6 @@
 \ ******************************************************************************
 \
-\ ELITE OVER ECONET SCOREBOARD MODULE SOURCE
+\ ELITE OVER ECONET MODULE SOURCE
 \
 \ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
 \ in the documentation are entirely my fault
@@ -15,7 +15,7 @@
 \
 \ This source file produces the following binary file:
 \
-\   * Scoreboard.bin
+\   * EliteOverEconet.bin
 \
 \ ******************************************************************************
 
@@ -27,8 +27,20 @@
 \
 \ ******************************************************************************
 
+ XOS_WriteC = &20000                \ The operating system call for printing a
+                                    \ character
+
+ XOS_Write0 = &20002                \ The operating system call for printing a
+                                    \ null-terminated string
+
+ XOS_Newline = &20003               \ The operating system call for printing a
+                                    \ newline
+
  XOS_Module = &2001E                \ The operating system call for claiming
                                     \ workspace for a module
+
+ XOS_EvaluateExpression = &2002D    \ The operating system call to convert a
+                                    \ string into a number
 
  XOS_ValidateAddress = &2003A       \ The operating system call to check whether
                                     \ an address range is in logical RAM
@@ -39,6 +51,15 @@
  XOS_RemoveTickerEvent = &2003D     \ The operating system call to remove a call
                                     \ set up by OS_CallEvery
 
+ XOS_ConvertCardinal1 = &200D5      \ The operating system call for printing an
+                                    \ unsigned integer byte
+
+ XOS_ConvertCardinal4 = &200D8      \ The operating system call for printing an
+                                    \ unsigned integer word
+
+ XOS_WriteI = &20100                \ The operating system call for printing the
+                                    \ character specified in the SWI number
+
  XEconet_StartTransmit = &60006     \ The operating system call to create a
                                     \ Transmit Control Block and start a
                                     \ transmission over Econet
@@ -47,11 +68,16 @@
                                     \ Transmit Control Block and reclaim the
                                     \ memory
 
+ XEconet_ReadStationNumber = &6000F \ The operating system call to convert a
+                                    \ string into a network and station number
+
 \ ******************************************************************************
 \
 \ Econet variables
 \
 \ ******************************************************************************
+
+ startWorkspace = &00               \ The start of the workspace
 
                                     \ R12 typically contains the address of the
                                     \ module's private workspace, so each of the
@@ -97,16 +123,16 @@
 
  trLegal = &28                      \ Byte #8 = commander's legal status:
                                     \
-                                    \   0 = Clean
-                                    \   1 = Offender
-                                    \   2 = Fugitive
+                                    \   * 0 = Clean
+                                    \   * 1 = Offender
+                                    \   * 2 = Fugitive
 
  trCondition = &29                  \ Byte #9 = commander's status condition:
                                     \
-                                    \   0 = Docked
-                                    \   1 = Green
-                                    \   2 = Yellow
-                                    \   3 = Red
+                                    \   * 0 = Docked
+                                    \   * 1 = Green
+                                    \   * 2 = Yellow
+                                    \   * 3 = Red
 
  trKill = &2A                       \ Byte #10 = commander's kill count
 
@@ -116,19 +142,33 @@
 
  trMachine = &30                    \ Byte #16 = machine type:
                                     \
-                                    \   0 = BBC Micro SRAM
-                                    \   1 = Master
-                                    \   2 = 6502SP
-                                    \   3 = BBC Micro standard
-                                    \   4 = Archimedes
+                                    \   * 0 = BBC Micro SRAM
+                                    \   * 1 = Master
+                                    \   * 2 = 6502SP
+                                    \   * 3 = BBC Micro standard
+                                    \   * 4 = Archimedes
 
- endOfBuffer = &34                  \ End of transmit buffer
+ scoreEnabled = &34                 \ Flag to control whether we transmit scores
+                                    \ to the scoreboard
+                                    \
+                                    \   * Zero = do not transmit scores
+                                    \   * Non-zero = do transmit scores
+
+ scoreInterval = &38                \ The interval between score transmissions
+                                    \ in centiseconds
+
+ stringBuffer = &3C                 \ String buffer for processing command line
+                                    \ parameters (12 characters)
+
+ endWorkspace = &48                 \ End of the private workspace
+
+ workspaceSize = endWorkspace - startWorkspace  \ The size of the workspace
 
 \ ******************************************************************************
 \
-\ ELITE OVER ECONET SCOREBOARD MODULE CODE
+\ ELITE OVER ECONET MODULE CODE
 \
-\ Produces the binary file Scoreboard.bin.
+\ Produces the binary file EliteOverEconet.bin.
 \
 \ ******************************************************************************
 
@@ -152,7 +192,7 @@
 \
 \       Name: Module header
 \       Type: Subroutine
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Relocatable module header
 \
 \ ******************************************************************************
@@ -169,20 +209,20 @@
 
  EQUD    help                       \ Offset to help string
 
- EQUD    0                          \ Offset to help and command keyword table
+ EQUD    helpAndCommandTable        \ Offset to help and command keyword table
 
 \ ******************************************************************************
 \
 \       Name: Module title
 \       Type: Variable
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Relocatable module title string
 \
 \ ******************************************************************************
 
 .title
 
- EQUS    "EliteScoreboard"
+ EQUS    "EliteOverEconet"
  EQUB    0
  ALIGN
 
@@ -190,16 +230,616 @@
 \
 \       Name: Module help text
 \       Type: Variable
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Relocatable module help string
 \
 \ ******************************************************************************
 
 .help
 
- EQUS    "EliteScoreboard"
+ EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (26 Mar 2025)"
+ EQUS    "0.10 (02 Apr 2025)"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: Module help and command table
+\       Type: Variable
+\   Category: Econet
+\    Summary: Relocatable module help and command table
+\
+\ ******************************************************************************
+
+.helpAndCommandTable
+
+                                    \ *EliteTxPort <port number>
+
+ EQUS    "EliteTxPort"              \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxPort                \ Offset of code from module start
+
+ EQUB    1                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    1                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxPortHelp            \ Offset of help text
+
+                                    \ *EliteTxStation <network>.<station>
+
+ EQUS    "EliteTxStation"           \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxStation             \ Offset of code from module start
+
+ EQUB    1                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    1                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxStationHelp         \ Offset of help text
+
+                                    \ *EliteTxInterval <interval>
+
+ EQUS    "EliteTxInterval"          \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxInterval            \ Offset of code from module start
+
+ EQUB    1                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    1                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxIntervalHelp        \ Offset of help text
+
+                                    \ *EliteTxStop
+
+ EQUS    "EliteTxStop"              \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxStop                \ Offset of code from module start
+
+ EQUB    0                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    0                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxStopHelp            \ Offset of help text
+
+                                    \ *EliteTxStart
+
+ EQUS    "EliteTxStart"             \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxStart               \ Offset of code from module start
+
+ EQUB    0                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    0                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxStartHelp           \ Offset of help text
+
+                                    \ *EliteTxReset
+
+ EQUS    "EliteTxReset"             \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxReset               \ Offset of code from module start
+
+ EQUB    0                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    0                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxResetHelp           \ Offset of help text
+
+                                    \ *EliteTxStatus
+
+ EQUS    "EliteTxStatus"            \ String to match, null terminated
+ EQUB    0
+ ALIGN
+
+ EQUD    EliteTxStatus              \ Offset of code from module start
+
+ EQUB    0                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    0                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxStatusHelp          \ Offset of help text
+
+ EQUD    0                          \ End of command table
+
+
+\ ******************************************************************************
+\
+\       Name: EliteTxPort
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxPort command
+\
+\ ******************************************************************************
+
+.EliteTxPort
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ ADD     R1, R12, #stringBuffer     \ Try converting the parameter to an integer
+ MOV     R2, #12                    \ using the string buffer in the workspace
+ SWI     XOS_EvaluateExpression
+
+ BVS     port1                      \ Report an error if the conversion went
+                                    \ wrong
+
+ TST     R1, #0                     \ Report an error if the result is not an
+ BNE     port1                      \ integer
+
+ CMP     R2, #0                     \ Report an error if the port number is not
+ BLE     port1                      \ in the range 1 to 255
+ CMP     R2, #255
+ BGT     port1
+
+ STR     R2, [R12, #scorePort]      \ Set scorePort to the new port number
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.port1
+
+ ADR     R0, eliteTxPortError       \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ MOVS    PC, R14
+
+.eliteTxPortError
+
+ EQUD    0
+ EQUS    "Invalid port number (must be 1 to 255)"
+ EQUB    0
+ ALIGN
+
+.eliteTxPortHelp
+
+ EQUS    "*EliteTxPort sets the port number for transmitting scores."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxPort <port number>"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxStation
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxStation command
+\
+\ ******************************************************************************
+
+.EliteTxStation
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ MOV     R1, R0                     \ Try converting the parameter to a station
+ SWI     XEconet_ReadStationNumber  \ and network number
+ 
+ BVS     stat1                      \ Report the SWI error if the conversion
+                                    \ went wrong, as this could mean that Econet
+                                    \ is disabled
+
+ CMN     R2, #1                     \ Report an error if the result does not
+ BEQ     stat2                      \ contain a valid station number
+
+ CMN     R3, #1                     \ Set R3 = 0 if the result does not contain
+ MOVEQ   R3, #0                     \ a valid network number
+
+ STR     R2, [R12, #scoreNetwork]   \ Set scoreNetwork to the new network number
+
+ STR     R3, [R12, #scoreStation]   \ Set scoreNetwork to the new station number
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+.stat1
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.stat2
+
+ ADR     R0, eliteTxStationError    \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ MOVS    PC, R14
+
+.eliteTxStationError
+
+ EQUD    0
+ EQUS    "Invalid station (must be in the format 0.123)"
+ EQUB    0
+ ALIGN
+
+.eliteTxStationHelp
+
+ EQUS    "*EliteTxStation sets the network and station number for transmitting scores."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxStation <network>.<station>"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxInterval
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxInterval command
+\
+\ ******************************************************************************
+
+.EliteTxInterval
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ ADD     R1, R12, #stringBuffer     \ Try converting the parameter to an integer
+ MOV     R2, #12                    \ using the string buffer in the workspace
+ SWI     XOS_EvaluateExpression
+
+ BVS     intv1                      \ Report an error if the conversion went
+                                    \ wrong
+
+ TST     R1, #0                     \ Report an error if the result is not an
+ BNE     intv1                      \ integer
+
+ CMP     R2, #100                   \ Report an error if the interval is < 100
+ BLT     intv1
+
+ STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the new port number
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.intv1
+
+ ADR     R0, eliteTxIntervalError   \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ MOVS    PC, R14
+
+.eliteTxIntervalError
+
+ EQUD    0
+ EQUS    "Invalid interval (must be at least 100)"
+ EQUB    0
+ ALIGN
+
+.eliteTxIntervalHelp
+
+ EQUS    "*EliteTxInterval sets the interval in centiseconds "
+ EQUS    "between score transmissions."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxInterval <interval>"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxStop
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxStop command
+\
+\ ******************************************************************************
+
+.EliteTxStop
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
+
+ TEQ     R1, #0                     \ If transmissions are already stopped, jump
+ BEQ     stop1                      \ to stop1 to report this
+
+ MOV     R0, #0                     \ Set scoreEnabled = 0 to denote that score
+ STR     R2, [R12, #scoreEnabled]   \ transmissions are stopped
+
+ ADR     R0, TransmitData           \ Remove the TransmitData routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
+                                    \ module's private workspace so it matches
+                                    \ the value of R2 that was used when adding
+                                    \ the routine to the ticker list)
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.stop1
+
+ ADR     R0, eliteTxStopError       \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ MOVS    PC, R14
+
+.eliteTxStopError
+
+ EQUD    0
+ EQUS    "Transmissions are already disabled"
+ EQUB    0
+ ALIGN
+
+.eliteTxStopHelp
+
+ EQUS    "*EliteTxStop disables score transmissions."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxStop"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxStart
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxStart command
+\
+\ ******************************************************************************
+
+.EliteTxStart
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
+
+ TEQ     R1, #1                     \ If transmissions are already started, jump
+ BEQ     star1                      \ to star1 to report this
+
+ MOV     R0, #1                     \ Set scoreEnabled = 0 to denote that score
+ STR     R2, [R12, #scoreEnabled]   \ transmissions are stopped
+
+ LDR     R0, [R2, #scoreInterval]   \ Add a call to the TransmitData routine
+ ADR     R1, TransmitData           \ into the ticker event list so it gets
+ MOV     R2, R12                    \ called every scoreInterval centiseconds),
+ SWI     XOS_CallEvery              \ to transmit the commander data to the
+                                    \ scoreboard
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.star1
+
+ ADR     R0, eliteTxStartError      \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ MOVS    PC, R14
+
+.eliteTxStartError
+
+ EQUD    0
+ EQUS    "Transmissions are already enabled"
+ EQUB    0
+ ALIGN
+
+.eliteTxStartHelp
+
+ EQUS    "*EliteTxStart enables score transmissions."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxStart"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxReset
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxReset command
+\
+\ ******************************************************************************
+
+.EliteTxReset
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ MOV     R0, #0                     \ Zero the kill tally and death count
+ STR     R0, [R12, #netTally]
+ STR     R0, [R12, #netDeaths]
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.eliteTxResetHelp
+
+ EQUS    "*EliteTxReset resets the kill tally and death count."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxReset"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: EliteTxStatus
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Implement the EliteTxStatus command
+\
+\ ******************************************************************************
+
+.EliteTxStatus
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ LDR     R0, [R12, #scoreEnabled]
+ TEQ     R0, #0
+ ADREQ   R0, statusDisabled
+ ADRNE   R0, statusEnabled
+ SWI     XOS_Write0
+ SWI     XOS_Newline
+
+ ADR     R0, statusInterval1
+ SWI     XOS_Write0
+
+ LDR     R0, [R12, #scoreInterval]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal4
+ SWI     XOS_Write0
+
+ ADR     R0, statusInterval2
+ SWI     XOS_Write0
+ SWI     XOS_Newline
+
+ ADR     R0, statusStation
+ SWI     XOS_Write0
+
+ LDR     R0, [R12, #scoreNetwork]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal1
+ SWI     XOS_Write0
+
+ MOV     R0, #&2E
+ SWI     XOS_WriteC
+
+ LDR     R0, [R12, #scoreStation]
+
+ CMP     R0, #100
+ SWILT   XOS_WriteI+&30
+
+ CMP     R0, #10
+ SWILT   XOS_WriteI+&30
+
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal1
+ SWI     XOS_Write0
+
+ SWI     XOS_Newline
+
+ ADR     R0, statusPort
+ SWI     XOS_Write0
+
+ LDR     R0, [R12, #scorePort]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal1
+ SWI     XOS_Write0
+
+ SWI     XOS_Newline
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+.statusEnabled
+
+ EQUS    "Transmissions:      Enabled"
+ EQUB    0
+ ALIGN
+
+.statusDisabled
+
+ EQUS    "Transmissions:      Disabled"
+ EQUB    0
+ ALIGN
+
+.statusInterval1
+
+ EQUS    "Transmit interval:  "
+ EQUB    0
+ ALIGN
+
+.statusInterval2
+
+ EQUS    " centiseconds"
+ EQUB    0
+ ALIGN
+
+.statusStation
+
+ EQUS    "Scoreboard station: "
+ EQUB    0
+ ALIGN
+
+.statusPort
+
+ EQUS    "Scoreboard port:    "
+ EQUB    0
+ ALIGN
+
+.eliteTxStatusHelp
+
+ EQUS    "*EliteTxStatus shows the configuration for scoreboard transmissions."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxStatus"
  EQUB    0
  ALIGN
 
@@ -207,7 +847,7 @@
 \
 \       Name: InitialiseModule
 \       Type: Subroutine
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Initialise the module
 \
 \ ******************************************************************************
@@ -228,9 +868,9 @@
                                     \ If we get here then the module's workspace
                                     \ has not been set up, so we do that now
 
- MOV     R0, #6                     \ Claim &40 bytes of workspace, returning
- MOV     R3, #&40                   \ the address of the workspace in R2
- SWI     XOS_Module
+ MOV     R0, #6                     \ Claim the correct number of bytes for the
+ MOV     R3, #workspaceSize         \ workspace, returning the address of the
+ SWI     XOS_Module                 \ workspace in R2
 
  LDMVSFD R13!, {PC}                 \ If the C flag is set then the claim has
                                     \ failed and the module can't be run, so
@@ -251,28 +891,23 @@
  STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
 
+ STR     R1, [R2, #scoreEnabled]    \ Disable transmissions by default
+
  MVN     R1, #0
  STR     R1, [R2, #currentRank]     \ Set the current rank to -1, to indicate
                                     \ that we haven't yet fetched it from the
                                     \ game
 
-                                    \ >>> HARD-CODED VALUES, need to change
-                                    \ these to *-commands
-
- MOV     R1, #0                     \ Set scoreboard to 0.128:100
- STR     R1, [R2, #scoreNetwork]
- MOV     R1, #100
- STR     R1, [R2, #scorePort]
- MOV     R1, #128
- STR     R1, [R2, #scoreStation]
+ MOV     R1, #100                   \ Initialise the transmission interval to
+ STR     R1, [R2, #scoreInterval]   \ 100 centiseconds (i.e. every second)
 
 .init1
 
- MOV     R0, #100                   \ Add a call to the TransmitData routine
+ LDR     R0, [R2, #scoreInterval]   \ Add a call to the TransmitData routine
  ADR     R1, TransmitData           \ into the ticker event list so it gets
- SWI     XOS_CallEvery              \ called every one second (set as 100
-                                    \ centiseconds), to transmit the commander
-                                    \ data to the scoreboard
+ SWI     XOS_CallEvery              \ called every scoreInterval centiseconds),
+                                    \ to transmit the commander data to the
+                                    \ scoreboard
                                     \
                                     \ Note that R2 contains the address of the
                                     \ module's private workspace, so this will
@@ -282,7 +917,8 @@
  MOV     R0, #50                    \ Add a call to the MonitorRank routine
  ADR     R1, MonitorRank            \ into the ticker event list so it gets
  SWI     XOS_CallEvery              \ called twice each second (i.e. every 50
-                                    \ centiseconds)
+                                    \ centiseconds), to check the commander's
+                                    \ rank for changes
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
@@ -290,7 +926,7 @@
 \
 \       Name: FinaliseModule
 \       Type: Subroutine
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Finalise the module
 \
 \ ******************************************************************************
@@ -328,7 +964,7 @@
 \
 \       Name: TransmitData
 \       Type: Subroutine
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Create and send an Econet data packet
 \
 \ ******************************************************************************
@@ -552,7 +1188,7 @@
 \
 \       Name: MonitorRank
 \       Type: Subroutine
-\   Category: Scoreboard
+\   Category: Econet
 \    Summary: Check the commander's rank and increase the net tally if it has
 \             increased since last time
 \
@@ -719,8 +1355,8 @@
 
 \ ******************************************************************************
 \
-\ Save Scoreboard.bin
+\ Save EliteOverEconet.bin
 \
 \ ******************************************************************************
 
- OSCLI "SAVE Scoreboard.bin "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
+ OSCLI "SAVE EliteOverEconet.bin "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE

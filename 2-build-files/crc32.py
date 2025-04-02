@@ -67,7 +67,7 @@ def main():
         print('Results for release: ' + os.path.basename(folder1))
         print(src + '  ' + dest)
         print('Checksum   Size  Checksum   Size  Match  Filename')
-        print('-----------------------------------------------------------')
+        print('------------------------------------------------------------')
 
         for name in names:
             if name.endswith(".bin"):

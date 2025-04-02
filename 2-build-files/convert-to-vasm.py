@@ -104,12 +104,12 @@ def convert(input_file, output_file):
             output_file.write(line)
 
 
-print("Converting 1-source-files/Scoreboard.arm")
+print("Converting 1-source-files/EliteOverEconet.arm")
 
-source_file = open("1-source-files/main-sources/Scoreboard.arm", "r")
-vasm_file = open("3-assembled-output/Scoreboard.arm", "w")
+source_file = open("1-source-files/main-sources/EliteOverEconet.arm", "r")
+vasm_file = open("3-assembled-output/EliteOverEconet.arm", "w")
 convert(source_file, vasm_file)
 source_file.close()
 vasm_file.close()
 
-print("3-assembled-output/Scoreboard.arm file saved")
+print("3-assembled-output/EliteOverEconet.arm file saved")

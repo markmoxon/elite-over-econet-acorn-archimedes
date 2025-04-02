@@ -45,7 +45,7 @@ def convert(input_file, output_file, inf_file):
     shutil.copy("5-compiled-game-discs/arthur/Game/GameCode", "5-compiled-game-discs/arthur/Game/GameCode,8000-" + exec_address[-4:].upper())
 
 
-print("Extracting exported variables from 1-source-files/Scoreboard.arm")
+print("Extracting exported variables from 1-source-files/EliteOverEconet.arm")
 
 compile_file = open("3-assembled-output/compile.txt", "r")
 vasm_file = open("3-assembled-output/exports.arm", "w")

@@ -1,345 +1,826 @@
 Sections:
-00: "seg0" (0-3F4)
+00: "seg0" (0-AD8)
 
 
-Source: "3-assembled-output/Scoreboard.arm"
+Source: "3-assembled-output/EliteOverEconet.arm"
                             	     1: .set CODE, 0x00000000
-                            	     2: .set XOS_Module, 0x2001E
-                            	     3: .set XOS_ValidateAddress, 0x2003A
-                            	     4: .set XOS_CallEvery, 0x2003C
-                            	     5: .set XOS_RemoveTickerEvent, 0x2003D
-                            	     6: .set XEconet_StartTransmit, 0x60006
-                            	     7: .set XEconet_AbandonTransmit, 0x60008
-                            	     8: .set scorePort, 0x00
-                            	     9: .set scoreStation, 0x04
-                            	    10: .set scoreNetwork, 0x08
-                            	    11: .set currentRank, 0x0C
-                            	    12: .set netTally, 0x10
-                            	    13: .set netDeaths, 0x14
-                            	    14: .set econetHandle, 0x18
-                            	    15: .set semaphore, 0x1C
-                            	    16: .set transmitBuffer, 0x20
-                            	    17: .set trName, 0x20
-                            	    18: .set trLegal, 0x28
-                            	    19: .set trCondition, 0x29
-                            	    20: .set trKill, 0x2A
-                            	    21: .set trDeaths, 0x2B
-                            	    22: .set trCredits, 0x2C
-                            	    23: .set trMachine, 0x30
-                            	    24: .set endOfBuffer, 0x34
-                            	    25: .org CODE
-00:00000000 00000000        	    26: .long    0
-00:00000004 50000000        	    27: .long    InitialiseModule
-00:00000008 CC000000        	    28: .long    FinaliseModule
-00:0000000C 00000000        	    29: .long    0
-00:00000010 1C000000        	    30: .long    title
-00:00000014 2C000000        	    31: .long    help
-00:00000018 00000000        	    32: .long    0
-                            	    33: title:
-00:0000001C 456C69746553636F	    34: .byte    "EliteScoreboard"
-00:00000024 7265626F617264
-00:0000002B 00              	    35: .byte    0
-                            	    36: .balign 4
-                            	    37: help:
-00:0000002C 456C69746553636F	    38: .byte    "EliteScoreboard"
-00:00000034 7265626F617264
-00:0000003B 09              	    39: .byte    9
-00:0000003C 312E303020283236	    40: .byte    "1.00 (26 Mar 2025)"
-00:00000044 204D617220323032
+                            	     2: .set XOS_WriteC, 0x20000
+                            	     3: .set XOS_Write0, 0x20002
+                            	     4: .set XOS_Newline, 0x20003
+                            	     5: .set XOS_Module, 0x2001E
+                            	     6: .set XOS_EvaluateExpression, 0x2002D
+                            	     7: .set XOS_ValidateAddress, 0x2003A
+                            	     8: .set XOS_CallEvery, 0x2003C
+                            	     9: .set XOS_RemoveTickerEvent, 0x2003D
+                            	    10: .set XOS_ConvertCardinal1, 0x200D5
+                            	    11: .set XOS_ConvertCardinal4, 0x200D8
+                            	    12: .set XOS_WriteI, 0x20100
+                            	    13: .set XEconet_StartTransmit, 0x60006
+                            	    14: .set XEconet_AbandonTransmit, 0x60008
+                            	    15: .set XEconet_ReadStationNumber, 0x6000F
+                            	    16: .set startWorkspace, 0x00
+                            	    17: .set scorePort, 0x00
+                            	    18: .set scoreStation, 0x04
+                            	    19: .set scoreNetwork, 0x08
+                            	    20: .set currentRank, 0x0C
+                            	    21: .set netTally, 0x10
+                            	    22: .set netDeaths, 0x14
+                            	    23: .set econetHandle, 0x18
+                            	    24: .set semaphore, 0x1C
+                            	    25: .set transmitBuffer, 0x20
+                            	    26: .set trName, 0x20
+                            	    27: .set trLegal, 0x28
+                            	    28: .set trCondition, 0x29
+                            	    29: .set trKill, 0x2A
+                            	    30: .set trDeaths, 0x2B
+                            	    31: .set trCredits, 0x2C
+                            	    32: .set trMachine, 0x30
+                            	    33: .set scoreEnabled, 0x34
+                            	    34: .set scoreInterval, 0x38
+                            	    35: .set stringBuffer, 0x3C
+                            	    36: .set endWorkspace, 0x48
+                            	    37: .set workspaceSize, endWorkspace - startWorkspace
+                            	    38: .org CODE
+00:00000000 00000000        	    39: .long    0
+00:00000004 40070000        	    40: .long    InitialiseModule
+00:00000008 B0070000        	    41: .long    FinaliseModule
+00:0000000C 00000000        	    42: .long    0
+00:00000010 1C000000        	    43: .long    title
+00:00000014 2C000000        	    44: .long    help
+00:00000018 50000000        	    45: .long    helpAndCommandTable
+                            	    46: title:
+00:0000001C 456C6974654F7665	    47: .byte    "EliteOverEconet"
+00:00000024 7245636F6E6574
+00:0000002B 00              	    48: .byte    0
+                            	    49: .balign 4
+                            	    50: help:
+00:0000002C 456C6974654F7665	    51: .byte    "EliteOverEconet"
+00:00000034 7245636F6E6574
+00:0000003B 09              	    52: .byte    9
+00:0000003C 302E313020283032	    53: .byte    "0.10 (02 Apr 2025)"
+00:00000044 2041707220323032
 00:0000004C 3529
-00:0000004E 00              	    41: .byte    0
-                            	    42: .balign 4
-                            	    43: InitialiseModule:
-00:00000050 00402DE9        	    44:  STMFD   R13!, {R14}
-00:00000054 00209CE5        	    45:  LDR     R2, [R12]
-00:00000058 000032E3        	    46:  TEQ     R2, #0
-00:0000005C 1300001A        	    47:  BNE     init1
-00:00000060 0600A0E3        	    48:  MOV     R0, #6
-00:00000064 4030A0E3        	    49:  MOV     R3, #0x40
-00:00000068 1E0002EF        	    50:  SWI     XOS_Module
-00:0000006C 0080BD68        	    51:  LDMVSFD R13!, {PC}
-00:00000070 00208CE5        	    52:  STR     R2, [R12]
-00:00000074 0010A0E3        	    53:  MOV     R1, #0
-00:00000078 181082E5        	    54:  STR     R1, [R2, #econetHandle]
-00:0000007C 101082E5        	    55:  STR     R1, [R2, #netTally]
-00:00000080 141082E5        	    56:  STR     R1, [R2, #netDeaths]
-00:00000084 081082E5        	    57:  STR     R1, [R2, #scoreNetwork]
-00:00000088 041082E5        	    58:  STR     R1, [R2, #scoreStation]
-00:0000008C 001082E5        	    59:  STR     R1, [R2, #scorePort]
-00:00000090 0010E0E3        	    60:  MVN     R1, #0
-00:00000094 0C1082E5        	    61:  STR     R1, [R2, #currentRank]
-00:00000098 0010A0E3        	    62:  MOV     R1, #0
-00:0000009C 081082E5        	    63:  STR     R1, [R2, #scoreNetwork]
-00:000000A0 6410A0E3        	    64:  MOV     R1, #100
-00:000000A4 001082E5        	    65:  STR     R1, [R2, #scorePort]
-00:000000A8 8010A0E3        	    66:  MOV     R1, #128
-00:000000AC 041082E5        	    67:  STR     R1, [R2, #scoreStation]
-                            	    68: init1:
-00:000000B0 6400A0E3        	    69:  MOV     R0, #100
-00:000000B4 48108FE2        	    70:  ADR     R1, TransmitData
-00:000000B8 3C0002EF        	    71:  SWI     XOS_CallEvery
-00:000000BC 3200A0E3        	    72:  MOV     R0, #50
-00:000000C0 231E8FE2        	    73:  ADR     R1, MonitorRank
-00:000000C4 3C0002EF        	    74:  SWI     XOS_CallEvery
-00:000000C8 0080FDE8        	    75:  LDMFD   R13!, {PC}^
-                            	    76: FinaliseModule:
-00:000000CC 00402DE9        	    77:  STMFD   R13!, {R14}
-00:000000D0 00C09CE5        	    78:  LDR     R12, [R12]
-00:000000D4 28008FE2        	    79:  ADR     R0, TransmitData
-00:000000D8 0C10A0E1        	    80:  MOV     R1, R12
-00:000000DC 3D0002EF        	    81:  SWI     XOS_RemoveTickerEvent
-00:000000E0 210E8FE2        	    82:  ADR     R0, MonitorRank
-00:000000E4 0C10A0E1        	    83:  MOV     R1, R12
-00:000000E8 3D0002EF        	    84:  SWI     XOS_RemoveTickerEvent
-00:000000EC 18009CE5        	    85:  LDR     R0, [R12, #econetHandle]
-00:000000F0 000030E3        	    86:  TEQ     R0, #0
-00:000000F4 0800061F        	    87:  SWINE   XEconet_AbandonTransmit
-00:000000F8 0010A0E3        	    88:  MOV     R1, #0
-00:000000FC 18108CE5        	    89:  STR     R1, [R12, #econetHandle]
-00:00000100 0080FDE8        	    90:  LDMFD   R13!, {PC}^
-                            	    91: TransmitData:
-00:00000104 FF1F2DE9        	    92:  STMFD   R13!, {R0-R12}
-00:00000108 0F50A0E1        	    93:  MOV     R5, PC
-00:0000010C 0340C5E3        	    94:  BIC     R4, R5, #3
-00:00000110 03F034E3        	    95:  TEQP    R4, #3
-00:00000114 0000A0E1        	    96:  MOV     R0, R0
-00:00000118 20402DE9        	    97:  STMFD   R13!, {R5, R14}
-00:0000011C B8029FE5        	    98:  LDR     R0, string1Addr
-00:00000120 0010A0E1        	    99:  MOV     R1, R0
-00:00000124 3A0002EF        	   100:  SWI     XOS_ValidateAddress
-00:00000128 6B00006A        	   101:  BVS     skipT
-00:0000012C 6A00002A        	   102:  BCS     skipT
-00:00000130 000090E5        	   103:  LDR     R0, [R0]
-00:00000134 A4129FE5        	   104:  LDR     R1, string1Match
-00:00000138 010050E1        	   105:  CMP     R0, R1
-00:0000013C 6600001A        	   106:  BNE     skipT
-00:00000140 9C029FE5        	   107:  LDR     R0, string2Addr
-00:00000144 0010A0E1        	   108:  MOV     R1, R0
-00:00000148 3A0002EF        	   109:  SWI     XOS_ValidateAddress
-00:0000014C 6200006A        	   110:  BVS     skipT
-00:00000150 6100002A        	   111:  BCS     skipT
-00:00000154 000090E5        	   112:  LDR     R0, [R0]
-00:00000158 88129FE5        	   113:  LDR     R1, string2Match
-00:0000015C 010050E1        	   114:  CMP     R0, R1
-00:00000160 5D00001A        	   115:  BNE     skipT
-00:00000164 80029FE5        	   116:  LDR     R0, string3Addr
-00:00000168 0010A0E1        	   117:  MOV     R1, R0
-00:0000016C 3A0002EF        	   118:  SWI     XOS_ValidateAddress
-00:00000170 5900006A        	   119:  BVS     skipT
-00:00000174 5800002A        	   120:  BCS     skipT
-00:00000178 000090E5        	   121:  LDR     R0, [R0]
-00:0000017C 6C129FE5        	   122:  LDR     R1, string3Match
-00:00000180 010050E1        	   123:  CMP     R0, R1
-00:00000184 5400001A        	   124:  BNE     skipT
-00:00000188 1C009CE5        	   125:  LDR     R0, [R12, #semaphore]
-00:0000018C 000030E3        	   126:  TEQ     R0, #0
-00:00000190 5300001A        	   127:  BNE     returnT
-00:00000194 0100A0E3        	   128:  MOV     R0, #1
-00:00000198 1C008CE5        	   129:  STR     R0, [R12, #semaphore]
-00:0000019C 18009CE5        	   130:  LDR     R0, [R12, #econetHandle]
-00:000001A0 000030E3        	   131:  TEQ     R0, #0
-00:000001A4 0800061F        	   132:  SWINE   XEconet_AbandonTransmit
-00:000001A8 18029FE5        	   133:  LDR     R0, cmdrName
-00:000001AC 041080E2        	   134:  ADD     R1, R0, #4
-00:000001B0 3A0002EF        	   135:  SWI     XOS_ValidateAddress
-00:000001B4 4800006A        	   136:  BVS     skipT
-00:000001B8 4700002A        	   137:  BCS     skipT
-00:000001BC 002090E5        	   138:  LDR     R2, [R0]
-00:000001C0 FF0012E3        	   139:  TST     R2, #0x000000FF
-00:000001C4 0D208203        	   140:  ORREQ   R2, R2, #0x0000000D
-00:000001C8 FF0C12E3        	   141:  TST     R2, #0x0000FF00
-00:000001CC 0D2C8203        	   142:  ORREQ   R2, R2, #0x00000D00
-00:000001D0 FF0812E3        	   143:  TST     R2, #0x00FF0000
-00:000001D4 0D288203        	   144:  ORREQ   R2, R2, #0x000D0000
-00:000001D8 FF0412E3        	   145:  TST     R2, #0xFF000000
-00:000001DC 0D248203        	   146:  ORREQ   R2, R2, #0x0D000000
-00:000001E0 20208CE5        	   147:  STR     R2, [R12, #trName]
-00:000001E4 042090E5        	   148:  LDR     R2, [R0, #4]
-00:000001E8 FF0012E3        	   149:  TST     R2, #0x000000FF
-00:000001EC 0D208203        	   150:  ORREQ   R2, R2, #0x0000000D
-00:000001F0 FF0C12E3        	   151:  TST     R2, #0x0000FF00
-00:000001F4 0D2C8203        	   152:  ORREQ   R2, R2, #0x00000D00
-00:000001F8 FF0812E3        	   153:  TST     R2, #0x00FF0000
-00:000001FC 0D288203        	   154:  ORREQ   R2, R2, #0x000D0000
-00:00000200 FF24C2E3        	   155:  AND     R2, R2, #0x00FFFFFF
-00:00000204 0D2482E3        	   156:  ORR     R2, R2, #0x0D000000
-00:00000208 24208CE5        	   157:  STR     R2, [R12, #trName+4]
-00:0000020C 0130A0E3        	   158:  MOV     R3, #1
-00:00000210 BC019FE5        	   159:  LDR     R0, cmdrLegal
-00:00000214 0010A0E1        	   160:  MOV     R1, R0
-00:00000218 3A0002EF        	   161:  SWI     XOS_ValidateAddress
-00:0000021C 2E00006A        	   162:  BVS     skipT
-00:00000220 2D00002A        	   163:  BCS     skipT
-00:00000224 002090E5        	   164:  LDR     R2, [R0]
-00:00000228 280052E3        	   165:  CMP     R2, #0x28
-00:0000022C 0030A0D3        	   166:  MOVLE   R3, #0
-00:00000230 FA0F52E3        	   167:  CMP     R2, #0x3E8
-00:00000234 0330A0C3        	   168:  MOVGT   R3, #3
-00:00000238 2830CCE5        	   169:  STRB    R3, [R12, #trLegal]
-00:0000023C 94019FE5        	   170:  LDR     R0, cmdrCondition
-00:00000240 0010A0E1        	   171:  MOV     R1, R0
-00:00000244 3A0002EF        	   172:  SWI     XOS_ValidateAddress
-00:00000248 2300006A        	   173:  BVS     skipT
-00:0000024C 2200002A        	   174:  BCS     skipT
-00:00000250 002090E5        	   175:  LDR     R2, [R0]
-00:00000254 012082E2        	   176:  ADD     R2, R2, #1
-00:00000258 040052E3        	   177:  CMP     R2, #4
-00:0000025C 05005213        	   178:  CMPNE   R2, #5
-00:00000260 0320A003        	   179:  MOVEQ   R2, #3
-00:00000264 060052E3        	   180:  CMP     R2, #6
-00:00000268 0020A0A3        	   181:  MOVGE   R2, #0
-00:0000026C 2920CCE5        	   182:  STRB    R2, [R12, #trCondition]
-00:00000270 1020DCE5        	   183:  LDRB    R2, [R12, #netTally]
-00:00000274 2A20CCE5        	   184:  STRB    R2, [R12, #trKill]
-00:00000278 1420DCE5        	   185:  LDRB    R2, [R12, #netDeaths]
-00:0000027C 2B20CCE5        	   186:  STRB    R2, [R12, #trDeaths]
-00:00000280 48019FE5        	   187:  LDR     R0, cmdrCredits
-00:00000284 0010A0E1        	   188:  MOV     R1, R0
-00:00000288 3A0002EF        	   189:  SWI     XOS_ValidateAddress
-00:0000028C 1200006A        	   190:  BVS     skipT
-00:00000290 1100002A        	   191:  BCS     skipT
-00:00000294 002090E5        	   192:  LDR     R2, [R0]
-00:00000298 2C208CE5        	   193:  STR     R2, [R12, #trCredits]
-00:0000029C 0420A0E3        	   194:  MOV     R2, #4
-00:000002A0 30208CE5        	   195:  STR     R2, [R12, #trMachine]
-00:000002A4 00109CE5        	   196:  LDR     R1, [R12, #scorePort]
-00:000002A8 000031E3        	   197:  TEQ     R1, #0
-00:000002AC 04209C15        	   198:  LDRNE   R2, [R12, #scoreStation]
-00:000002B0 00003213        	   199:  TEQNE   R2, #0
-00:000002B4 0800000A        	   200:  BEQ     skipT
-00:000002B8 0000A0E3        	   201:  MOV     R0, #0
-00:000002BC 08309CE5        	   202:  LDR     R3, [R12, #scoreNetwork]
-00:000002C0 20408CE2        	   203:  ADD     R4, R12, #transmitBuffer
-00:000002C4 1450A0E3        	   204:  MOV     R5, #20
-00:000002C8 0160A0E3        	   205:  MOV     R6, #1
-00:000002CC 0070A0E3        	   206:  MOV     R7, #0
-00:000002D0 060006EF        	   207:  SWI     XEconet_StartTransmit
-00:000002D4 0000A063        	   208:  MOVVS   R0, #0
-00:000002D8 18008CE5        	   209:  STR     R0, [R12, #econetHandle]
-                            	   210: skipT:
-00:000002DC 0000A0E3        	   211:  MOV     R0, #0
-00:000002E0 1C008CE5        	   212:  STR     R0, [R12, #semaphore]
-                            	   213: returnT:
-00:000002E4 2040BDE8        	   214:  LDMFD   R13!, {R5, R14}
-00:000002E8 00F035E3        	   215:  TEQP    R5, #0
-00:000002EC 0000A0E1        	   216:  MOV     R0, R0
-00:000002F0 FF1FBDE8        	   217:  LDMFD   R13!, {R0-R12}
-00:000002F4 0EF0A0E1        	   218:  MOV     PC, R14
-                            	   219: MonitorRank:
-00:000002F8 FF1F2DE9        	   220:  STMFD   R13!, {R0-R12}
-00:000002FC 0F50A0E1        	   221:  MOV     R5, PC
-00:00000300 0340C5E3        	   222:  BIC     R4, R5, #3
-00:00000304 03F034E3        	   223:  TEQP    R4, #3
-00:00000308 0000A0E1        	   224:  MOV     R0, R0
-00:0000030C 20402DE9        	   225:  STMFD   R13!, {R5, R14}
-00:00000310 C4009FE5        	   226:  LDR     R0, string1Addr
-00:00000314 0010A0E1        	   227:  MOV     R1, R0
-00:00000318 3A0002EF        	   228:  SWI     XOS_ValidateAddress
-00:0000031C 2400006A        	   229:  BVS     skipM
-00:00000320 2300002A        	   230:  BCS     skipM
-00:00000324 000090E5        	   231:  LDR     R0, [R0]
-00:00000328 B0109FE5        	   232:  LDR     R1, string1Match
-00:0000032C 010050E1        	   233:  CMP     R0, R1
-00:00000330 1F00001A        	   234:  BNE     skipM
-00:00000334 A8009FE5        	   235:  LDR     R0, string2Addr
-00:00000338 0010A0E1        	   236:  MOV     R1, R0
-00:0000033C 3A0002EF        	   237:  SWI     XOS_ValidateAddress
-00:00000340 1B00006A        	   238:  BVS     skipM
-00:00000344 1A00002A        	   239:  BCS     skipM
-00:00000348 000090E5        	   240:  LDR     R0, [R0]
-00:0000034C 94109FE5        	   241:  LDR     R1, string2Match
-00:00000350 010050E1        	   242:  CMP     R0, R1
-00:00000354 1600001A        	   243:  BNE     skipM
-00:00000358 8C009FE5        	   244:  LDR     R0, string3Addr
-00:0000035C 0010A0E1        	   245:  MOV     R1, R0
-00:00000360 3A0002EF        	   246:  SWI     XOS_ValidateAddress
-00:00000364 1200006A        	   247:  BVS     skipM
-00:00000368 1100002A        	   248:  BCS     skipM
-00:0000036C 000090E5        	   249:  LDR     R0, [R0]
-00:00000370 78109FE5        	   250:  LDR     R1, string3Match
-00:00000374 010050E1        	   251:  CMP     R0, R1
-00:00000378 0D00001A        	   252:  BNE     skipM
-00:0000037C 48009FE5        	   253:  LDR     R0, cmdrRank
-00:00000380 0010A0E1        	   254:  MOV     R1, R0
-00:00000384 3A0002EF        	   255:  SWI     XOS_ValidateAddress
-00:00000388 0900006A        	   256:  BVS     skipM
-00:0000038C 0800002A        	   257:  BCS     skipM
-00:00000390 0C109CE5        	   258:  LDR     R1, [R12, #currentRank]
-00:00000394 002090E5        	   259:  LDR     R2, [R0]
-00:00000398 0C208CE5        	   260:  STR     R2, [R12, #currentRank]
-00:0000039C 010071E3        	   261:  CMN     R1, #1
-00:000003A0 0300000A        	   262:  BEQ     skipM
-00:000003A4 010052E1        	   263:  CMP     R2, R1
-00:000003A8 10309CC5        	   264:  LDRGT   R3, [R12, #netTally]
-00:000003AC 013083C2        	   265:  ADDGT   R3, R3, #1
-00:000003B0 10308CC5        	   266:  STRGT   R3, [R12, #netTally]
-                            	   267: skipM:
-00:000003B4 2040BDE8        	   268:  LDMFD   R13!, {R5, R14}
-00:000003B8 00F035E3        	   269:  TEQP    R5, #0
-00:000003BC 0000A0E1        	   270:  MOV     R0, R0
-00:000003C0 FF1FBDE8        	   271:  LDMFD   R13!, {R0-R12}
-00:000003C4 0EF0A0E1        	   272:  MOV     PC, R14
-                            	   273: cmdrName:
-00:000003C8 98A60500        	   274: .long    0x0005A698
-                            	   275: cmdrRank:
-00:000003CC 60A90500        	   276: .long    0x0005A960
-                            	   277: cmdrCredits:
-00:000003D0 4C530600        	   278: .long    0x0006534C
-                            	   279: cmdrLegal:
-00:000003D4 98530600        	   280: .long    0x00065398
-                            	   281: cmdrCondition:
-00:000003D8 A0530600        	   282: .long    0x000653A0
-                            	   283: string1Addr:
-00:000003DC 14AF0100        	   284: .long    0x0001AF14
-                            	   285: string1Match:
-00:000003E0 4752494E        	   286: .long    0x4E495247
-                            	   287: string2Addr:
-00:000003E4 00AF0100        	   288: .long    0x0001AF00
-                            	   289: string2Match:
-00:000003E8 41525245        	   290: .long    0x45525241
-                            	   291: string3Addr:
-00:000003EC 08150700        	   292: .long    0x00071508
-                            	   293: string3Match:
-00:000003F0 312E3134        	   294: .long    0x34312E31
-                            	   295: 
+00:0000004E 00              	    54: .byte    0
+                            	    55: .balign 4
+                            	    56: helpAndCommandTable:
+00:00000050 456C697465547850	    57: .byte    "EliteTxPort"
+00:00000058 6F7274
+00:0000005B 00              	    58: .byte    0
+                            	    59: .balign 4
+00:0000005C 2C010000        	    60: .long    EliteTxPort
+00:00000060 01              	    61: .byte    1
+00:00000061 00              	    62: .byte    0
+00:00000062 01              	    63: .byte    1
+00:00000063 00              	    64: .byte    0
+00:00000064 00000000        	    65: .long    0
+00:00000068 A4010000        	    66: .long    eliteTxPortHelp
+00:0000006C 456C697465547853	    67: .byte    "EliteTxStation"
+00:00000074 746174696F6E
+00:0000007A 00              	    68: .byte    0
+                            	    69: .balign 4
+00:0000007C 04020000        	    70: .long    EliteTxStation
+00:00000080 01              	    71: .byte    1
+00:00000081 00              	    72: .byte    0
+00:00000082 01              	    73: .byte    1
+00:00000083 00              	    74: .byte    0
+00:00000084 00000000        	    75: .long    0
+00:00000088 7C020000        	    76: .long    eliteTxStationHelp
+00:0000008C 456C697465547849	    77: .byte    "EliteTxInterval"
+00:00000094 6E74657276616C
+00:0000009B 00              	    78: .byte    0
+                            	    79: .balign 4
+00:0000009C F8020000        	    80: .long    EliteTxInterval
+00:000000A0 01              	    81: .byte    1
+00:000000A1 00              	    82: .byte    0
+00:000000A2 01              	    83: .byte    1
+00:000000A3 00              	    84: .byte    0
+00:000000A4 00000000        	    85: .long    0
+00:000000A8 68030000        	    86: .long    eliteTxIntervalHelp
+00:000000AC 456C697465547853	    87: .byte    "EliteTxStop"
+00:000000B4 746F70
+00:000000B7 00              	    88: .byte    0
+                            	    89: .balign 4
+00:000000B8 DC030000        	    90: .long    EliteTxStop
+00:000000BC 00              	    91: .byte    0
+00:000000BD 00              	    92: .byte    0
+00:000000BE 00              	    93: .byte    0
+00:000000BF 00              	    94: .byte    0
+00:000000C0 00000000        	    95: .long    0
+00:000000C4 44040000        	    96: .long    eliteTxStopHelp
+00:000000C8 456C697465547853	    97: .byte    "EliteTxStart"
+00:000000D0 74617274
+00:000000D4 00              	    98: .byte    0
+                            	    99: .balign 4
+00:000000D8 84040000        	   100: .long    EliteTxStart
+00:000000DC 00              	   101: .byte    0
+00:000000DD 00              	   102: .byte    0
+00:000000DE 00              	   103: .byte    0
+00:000000DF 00              	   104: .byte    0
+00:000000E0 00000000        	   105: .long    0
+00:000000E4 F0040000        	   106: .long    eliteTxStartHelp
+00:000000E8 456C697465547852	   107: .byte    "EliteTxReset"
+00:000000F0 65736574
+00:000000F4 00              	   108: .byte    0
+                            	   109: .balign 4
+00:000000F8 34050000        	   110: .long    EliteTxReset
+00:000000FC 00              	   111: .byte    0
+00:000000FD 00              	   112: .byte    0
+00:000000FE 00              	   113: .byte    0
+00:000000FF 00              	   114: .byte    0
+00:00000100 00000000        	   115: .long    0
+00:00000104 4C050000        	   116: .long    eliteTxResetHelp
+00:00000108 456C697465547853	   117: .byte    "EliteTxStatus"
+00:00000110 7461747573
+00:00000115 00              	   118: .byte    0
+                            	   119: .balign 4
+00:00000118 98050000        	   120: .long    EliteTxStatus
+00:0000011C 00              	   121: .byte    0
+00:0000011D 00              	   122: .byte    0
+00:0000011E 00              	   123: .byte    0
+00:0000011F 00              	   124: .byte    0
+00:00000120 00000000        	   125: .long    0
+00:00000124 E4060000        	   126: .long    eliteTxStatusHelp
+00:00000128 00000000        	   127: .long    0
+                            	   128: EliteTxPort:
+00:0000012C 00402DE9        	   129:  STMFD   R13!, {R14}
+00:00000130 00C09CE5        	   130:  LDR     R12, [R12]
+00:00000134 3C108CE2        	   131:  ADD     R1, R12, #stringBuffer
+00:00000138 0C20A0E3        	   132:  MOV     R2, #12
+00:0000013C 2D0002EF        	   133:  SWI     XOS_EvaluateExpression
+00:00000140 0800006A        	   134:  BVS     port1
+00:00000144 000011E3        	   135:  TST     R1, #0
+00:00000148 0600001A        	   136:  BNE     port1
+00:0000014C 000052E3        	   137:  CMP     R2, #0
+00:00000150 040000DA        	   138:  BLE     port1
+00:00000154 FF0052E3        	   139:  CMP     R2, #255
+00:00000158 020000CA        	   140:  BGT     port1
+00:0000015C 00208CE5        	   141:  STR     R2, [R12, #scorePort]
+00:00000160 0000A0E3        	   142:  MOV     R0, #0
+00:00000164 0080BDE8        	   143:  LDMFD   R13!, {PC}
+                            	   144: port1:
+00:00000168 08008FE2        	   145:  ADR     R0, eliteTxPortError
+00:0000016C 0040BDE8        	   146:  LDMFD   R13!, {R14}
+00:00000170 01E28EE3        	   147:  ORR     R14, R14, #1<<28
+00:00000174 0EF0B0E1        	   148:  MOVS    PC, R14
+                            	   149: eliteTxPortError:
+00:00000178 00000000        	   150: .long    0
+00:0000017C 496E76616C696420	   151: .byte    "Invalid port number (must be 1 to 255)"
+00:00000184 706F7274206E756D
+00:0000018C 62657220286D7573
+00:00000194 7420626520312074
+00:0000019C 6F2032353529
+00:000001A2 00              	   152: .byte    0
+                            	   153: .balign 4
+                            	   154: eliteTxPortHelp:
+00:000001A4 2A456C6974655478	   155: .byte    "*EliteTxPort sets the port number for transmitting scores."
+00:000001AC 506F727420736574
+00:000001B4 732074686520706F
+00:000001BC 7274206E756D6265
+00:000001C4 7220666F72207472
+00:000001CC 616E736D69747469
+00:000001D4 6E672073636F7265
+00:000001DC 732E
+00:000001DE 0D              	   156: .byte    13
+00:000001DF 53796E7461783A20	   157: .byte    "Syntax: *EliteTxPort <port number>"
+00:000001E7 2A456C6974655478
+00:000001EF 506F7274203C706F
+00:000001F7 7274206E756D6265
+00:000001FF 723E
+00:00000201 00              	   158: .byte    0
+                            	   159: .balign 4
+                            	   160: EliteTxStation:
+00:00000204 00402DE9        	   161:  STMFD   R13!, {R14}
+00:00000208 00C09CE5        	   162:  LDR     R12, [R12]
+00:0000020C 0010A0E1        	   163:  MOV     R1, R0
+00:00000210 0F0006EF        	   164:  SWI     XEconet_ReadStationNumber
+00:00000214 0600006A        	   165:  BVS     stat1
+00:00000218 010072E3        	   166:  CMN     R2, #1
+00:0000021C 0500000A        	   167:  BEQ     stat2
+00:00000220 010073E3        	   168:  CMN     R3, #1
+00:00000224 0030A003        	   169:  MOVEQ   R3, #0
+00:00000228 08208CE5        	   170:  STR     R2, [R12, #scoreNetwork]
+00:0000022C 04308CE5        	   171:  STR     R3, [R12, #scoreStation]
+00:00000230 0000A0E3        	   172:  MOV     R0, #0
+                            	   173: stat1:
+00:00000234 0080BDE8        	   174:  LDMFD   R13!, {PC}
+                            	   175: stat2:
+00:00000238 08008FE2        	   176:  ADR     R0, eliteTxStationError
+00:0000023C 0040BDE8        	   177:  LDMFD   R13!, {R14}
+00:00000240 01E28EE3        	   178:  ORR     R14, R14, #1<<28
+00:00000244 0EF0B0E1        	   179:  MOVS    PC, R14
+                            	   180: eliteTxStationError:
+00:00000248 00000000        	   181: .long    0
+00:0000024C 496E76616C696420	   182: .byte    "Invalid station (must be in the format 0.123)"
+00:00000254 73746174696F6E20
+00:0000025C 286D757374206265
+00:00000264 20696E2074686520
+00:0000026C 666F726D61742030
+00:00000274 2E31323329
+00:00000279 00              	   183: .byte    0
+                            	   184: .balign 4
+                            	   185: eliteTxStationHelp:
+00:0000027C 2A456C6974655478	   186: .byte    "*EliteTxStation sets the network and station number for transmitting scores."
+00:00000284 53746174696F6E20
+00:0000028C 7365747320746865
+00:00000294 206E6574776F726B
+00:0000029C 20616E6420737461
+00:000002A4 74696F6E206E756D
+00:000002AC 62657220666F7220
+00:000002B4 7472616E736D6974
+00:000002BC 74696E672073636F
+00:000002C4 7265732E
+00:000002C8 0D              	   187: .byte    13
+00:000002C9 53796E7461783A20	   188: .byte    "Syntax: *EliteTxStation <network>.<station>"
+00:000002D1 2A456C6974655478
+00:000002D9 53746174696F6E20
+00:000002E1 3C6E6574776F726B
+00:000002E9 3E2E3C7374617469
+00:000002F1 6F6E3E
+00:000002F4 00              	   189: .byte    0
+                            	   190: .balign 4
+                            	   191: EliteTxInterval:
+00:000002F8 00402DE9        	   192:  STMFD   R13!, {R14}
+00:000002FC 00C09CE5        	   193:  LDR     R12, [R12]
+00:00000300 3C108CE2        	   194:  ADD     R1, R12, #stringBuffer
+00:00000304 0C20A0E3        	   195:  MOV     R2, #12
+00:00000308 2D0002EF        	   196:  SWI     XOS_EvaluateExpression
+00:0000030C 0600006A        	   197:  BVS     intv1
+00:00000310 000011E3        	   198:  TST     R1, #0
+00:00000314 0400001A        	   199:  BNE     intv1
+00:00000318 640052E3        	   200:  CMP     R2, #100
+00:0000031C 020000BA        	   201:  BLT     intv1
+00:00000320 38208CE5        	   202:  STR     R2, [R12, #scoreInterval]
+00:00000324 0000A0E3        	   203:  MOV     R0, #0
+00:00000328 0080BDE8        	   204:  LDMFD   R13!, {PC}
+                            	   205: intv1:
+00:0000032C 08008FE2        	   206:  ADR     R0, eliteTxIntervalError
+00:00000330 0040BDE8        	   207:  LDMFD   R13!, {R14}
+00:00000334 01E28EE3        	   208:  ORR     R14, R14, #1<<28
+00:00000338 0EF0B0E1        	   209:  MOVS    PC, R14
+                            	   210: eliteTxIntervalError:
+00:0000033C 00000000        	   211: .long    0
+00:00000340 496E76616C696420	   212: .byte    "Invalid interval (must be at least 100)"
+00:00000348 696E74657276616C
+00:00000350 20286D7573742062
+00:00000358 65206174206C6561
+00:00000360 73742031303029
+00:00000367 00              	   213: .byte    0
+                            	   214: .balign 4
+                            	   215: eliteTxIntervalHelp:
+00:00000368 2A456C6974655478	   216: .byte    "*EliteTxInterval sets the interval in centiseconds "
+00:00000370 496E74657276616C
+00:00000378 2073657473207468
+00:00000380 6520696E74657276
+00:00000388 616C20696E206365
+00:00000390 6E74697365636F6E
+00:00000398 647320
+00:0000039B 6265747765656E20	   217: .byte    "between score transmissions."
+00:000003A3 73636F7265207472
+00:000003AB 616E736D69737369
+00:000003B3 6F6E732E
+00:000003B7 0D              	   218: .byte    13
+00:000003B8 53796E7461783A20	   219: .byte    "Syntax: *EliteTxInterval <interval>"
+00:000003C0 2A456C6974655478
+00:000003C8 496E74657276616C
+00:000003D0 203C696E74657276
+00:000003D8 616C3E
+00:000003DB 00              	   220: .byte    0
+                            	   221: .balign 4
+                            	   222: EliteTxStop:
+00:000003DC 00402DE9        	   223:  STMFD   R13!, {R14}
+00:000003E0 00C09CE5        	   224:  LDR     R12, [R12]
+00:000003E4 34109CE5        	   225:  LDR     R1, [R12, #scoreEnabled]
+00:000003E8 000031E3        	   226:  TEQ     R1, #0
+00:000003EC 0600000A        	   227:  BEQ     stop1
+00:000003F0 0000A0E3        	   228:  MOV     R0, #0
+00:000003F4 34208CE5        	   229:  STR     R2, [R12, #scoreEnabled]
+00:000003F8 FA0F8FE2        	   230:  ADR     R0, TransmitData
+00:000003FC 0C10A0E1        	   231:  MOV     R1, R12
+00:00000400 3D0002EF        	   232:  SWI     XOS_RemoveTickerEvent
+00:00000404 0000A0E3        	   233:  MOV     R0, #0
+00:00000408 0080BDE8        	   234:  LDMFD   R13!, {PC}
+                            	   235: stop1:
+00:0000040C 08008FE2        	   236:  ADR     R0, eliteTxStopError
+00:00000410 0040BDE8        	   237:  LDMFD   R13!, {R14}
+00:00000414 01E28EE3        	   238:  ORR     R14, R14, #1<<28
+00:00000418 0EF0B0E1        	   239:  MOVS    PC, R14
+                            	   240: eliteTxStopError:
+00:0000041C 00000000        	   241: .long    0
+00:00000420 5472616E736D6973	   242: .byte    "Transmissions are already disabled"
+00:00000428 73696F6E73206172
+00:00000430 6520616C72656164
+00:00000438 792064697361626C
+00:00000440 6564
+00:00000442 00              	   243: .byte    0
+                            	   244: .balign 4
+                            	   245: eliteTxStopHelp:
+00:00000444 2A456C6974655478	   246: .byte    "*EliteTxStop disables score transmissions."
+00:0000044C 53746F7020646973
+00:00000454 61626C6573207363
+00:0000045C 6F7265207472616E
+00:00000464 736D697373696F6E
+00:0000046C 732E
+00:0000046E 0D              	   247: .byte    13
+00:0000046F 53796E7461783A20	   248: .byte    "Syntax: *EliteTxStop"
+00:00000477 2A456C6974655478
+00:0000047F 53746F70
+00:00000483 00              	   249: .byte    0
+                            	   250: .balign 4
+                            	   251: EliteTxStart:
+00:00000484 00402DE9        	   252:  STMFD   R13!, {R14}
+00:00000488 00C09CE5        	   253:  LDR     R12, [R12]
+00:0000048C 34109CE5        	   254:  LDR     R1, [R12, #scoreEnabled]
+00:00000490 010031E3        	   255:  TEQ     R1, #1
+00:00000494 0700000A        	   256:  BEQ     star1
+00:00000498 0100A0E3        	   257:  MOV     R0, #1
+00:0000049C 34208CE5        	   258:  STR     R2, [R12, #scoreEnabled]
+00:000004A0 380092E5        	   259:  LDR     R0, [R2, #scoreInterval]
+00:000004A4 CF1F8FE2        	   260:  ADR     R1, TransmitData
+00:000004A8 0C20A0E1        	   261:  MOV     R2, R12
+00:000004AC 3C0002EF        	   262:  SWI     XOS_CallEvery
+00:000004B0 0000A0E3        	   263:  MOV     R0, #0
+00:000004B4 0080BDE8        	   264:  LDMFD   R13!, {PC}
+                            	   265: star1:
+00:000004B8 08008FE2        	   266:  ADR     R0, eliteTxStartError
+00:000004BC 0040BDE8        	   267:  LDMFD   R13!, {R14}
+00:000004C0 01E28EE3        	   268:  ORR     R14, R14, #1<<28
+00:000004C4 0EF0B0E1        	   269:  MOVS    PC, R14
+                            	   270: eliteTxStartError:
+00:000004C8 00000000        	   271: .long    0
+00:000004CC 5472616E736D6973	   272: .byte    "Transmissions are already enabled"
+00:000004D4 73696F6E73206172
+00:000004DC 6520616C72656164
+00:000004E4 7920656E61626C65
+00:000004EC 64
+00:000004ED 00              	   273: .byte    0
+                            	   274: .balign 4
+                            	   275: eliteTxStartHelp:
+00:000004F0 2A456C6974655478	   276: .byte    "*EliteTxStart enables score transmissions."
+00:000004F8 537461727420656E
+00:00000500 61626C6573207363
+00:00000508 6F7265207472616E
+00:00000510 736D697373696F6E
+00:00000518 732E
+00:0000051A 0D              	   277: .byte    13
+00:0000051B 53796E7461783A20	   278: .byte    "Syntax: *EliteTxStart"
+00:00000523 2A456C6974655478
+00:0000052B 5374617274
+00:00000530 00              	   279: .byte    0
+                            	   280: .balign 4
+                            	   281: EliteTxReset:
+00:00000534 00402DE9        	   282:  STMFD   R13!, {R14}
+00:00000538 00C09CE5        	   283:  LDR     R12, [R12]
+00:0000053C 0000A0E3        	   284:  MOV     R0, #0
+00:00000540 10008CE5        	   285:  STR     R0, [R12, #netTally]
+00:00000544 14008CE5        	   286:  STR     R0, [R12, #netDeaths]
+00:00000548 0080BDE8        	   287:  LDMFD   R13!, {PC}
+                            	   288: eliteTxResetHelp:
+00:0000054C 2A456C6974655478	   289: .byte    "*EliteTxReset resets the kill tally and death count."
+00:00000554 5265736574207265
+00:0000055C 7365747320746865
+00:00000564 206B696C6C207461
+00:0000056C 6C6C7920616E6420
+00:00000574 646561746820636F
+00:0000057C 756E742E
+00:00000580 0D              	   290: .byte    13
+00:00000581 53796E7461783A20	   291: .byte    "Syntax: *EliteTxReset"
+00:00000589 2A456C6974655478
+00:00000591 5265736574
+00:00000596 00              	   292: .byte    0
+                            	   293: .balign 4
+                            	   294: EliteTxStatus:
+00:00000598 00402DE9        	   295:  STMFD   R13!, {R14}
+00:0000059C 00C09CE5        	   296:  LDR     R12, [R12]
+00:000005A0 34009CE5        	   297:  LDR     R0, [R12, #scoreEnabled]
+00:000005A4 000030E3        	   298:  TEQ     R0, #0
+00:000005A8 BC008F02        	   299:  ADREQ   R0, statusDisabled
+00:000005AC 9C008F12        	   300:  ADRNE   R0, statusEnabled
+00:000005B0 020002EF        	   301:  SWI     XOS_Write0
+00:000005B4 030002EF        	   302:  SWI     XOS_Newline
+00:000005B8 CC008FE2        	   303:  ADR     R0, statusInterval1
+00:000005BC 020002EF        	   304:  SWI     XOS_Write0
+00:000005C0 38009CE5        	   305:  LDR     R0, [R12, #scoreInterval]
+00:000005C4 3C108CE2        	   306:  ADD     R1, R12, #stringBuffer
+00:000005C8 0C20A0E3        	   307:  MOV     R2, #12
+00:000005CC D80002EF        	   308:  SWI     XOS_ConvertCardinal4
+00:000005D0 020002EF        	   309:  SWI     XOS_Write0
+00:000005D4 C8008FE2        	   310:  ADR     R0, statusInterval2
+00:000005D8 020002EF        	   311:  SWI     XOS_Write0
+00:000005DC 030002EF        	   312:  SWI     XOS_Newline
+00:000005E0 CC008FE2        	   313:  ADR     R0, statusStation
+00:000005E4 020002EF        	   314:  SWI     XOS_Write0
+00:000005E8 08009CE5        	   315:  LDR     R0, [R12, #scoreNetwork]
+00:000005EC 3C108CE2        	   316:  ADD     R1, R12, #stringBuffer
+00:000005F0 0C20A0E3        	   317:  MOV     R2, #12
+00:000005F4 D50002EF        	   318:  SWI     XOS_ConvertCardinal1
+00:000005F8 020002EF        	   319:  SWI     XOS_Write0
+00:000005FC 2E00A0E3        	   320:  MOV     R0, #0x2E
+00:00000600 000002EF        	   321:  SWI     XOS_WriteC
+00:00000604 04009CE5        	   322:  LDR     R0, [R12, #scoreStation]
+00:00000608 640050E3        	   323:  CMP     R0, #100
+00:0000060C 300102BF        	   324:  SWILT   XOS_WriteI+0x30
+00:00000610 0A0050E3        	   325:  CMP     R0, #10
+00:00000614 300102BF        	   326:  SWILT   XOS_WriteI+0x30
+00:00000618 3C108CE2        	   327:  ADD     R1, R12, #stringBuffer
+00:0000061C 0C20A0E3        	   328:  MOV     R2, #12
+00:00000620 D50002EF        	   329:  SWI     XOS_ConvertCardinal1
+00:00000624 020002EF        	   330:  SWI     XOS_Write0
+00:00000628 030002EF        	   331:  SWI     XOS_Newline
+00:0000062C 98008FE2        	   332:  ADR     R0, statusPort
+00:00000630 020002EF        	   333:  SWI     XOS_Write0
+00:00000634 00009CE5        	   334:  LDR     R0, [R12, #scorePort]
+00:00000638 3C108CE2        	   335:  ADD     R1, R12, #stringBuffer
+00:0000063C 0C20A0E3        	   336:  MOV     R2, #12
+00:00000640 D50002EF        	   337:  SWI     XOS_ConvertCardinal1
+00:00000644 020002EF        	   338:  SWI     XOS_Write0
+00:00000648 030002EF        	   339:  SWI     XOS_Newline
+00:0000064C 0080BDE8        	   340:  LDMFD   R13!, {PC}
+                            	   341: statusEnabled:
+00:00000650 5472616E736D6973	   342: .byte    "Transmissions:      Enabled"
+00:00000658 73696F6E733A2020
+00:00000660 20202020456E6162
+00:00000668 6C6564
+00:0000066B 00              	   343: .byte    0
+                            	   344: .balign 4
+                            	   345: statusDisabled:
+00:0000066C 5472616E736D6973	   346: .byte    "Transmissions:      Disabled"
+00:00000674 73696F6E733A2020
+00:0000067C 2020202044697361
+00:00000684 626C6564
+00:00000688 00              	   347: .byte    0
+                            	   348: .balign 4
+                            	   349: statusInterval1:
+00:0000068C 5472616E736D6974	   350: .byte    "Transmit interval:  "
+00:00000694 20696E7465727661
+00:0000069C 6C3A2020
+00:000006A0 00              	   351: .byte    0
+                            	   352: .balign 4
+                            	   353: statusInterval2:
+00:000006A4 2063656E74697365	   354: .byte    " centiseconds"
+00:000006AC 636F6E6473
+00:000006B1 00              	   355: .byte    0
+                            	   356: .balign 4
+                            	   357: statusStation:
+00:000006B4 53636F7265626F61	   358: .byte    "Scoreboard station: "
+00:000006BC 7264207374617469
+00:000006C4 6F6E3A20
+00:000006C8 00              	   359: .byte    0
+                            	   360: .balign 4
+                            	   361: statusPort:
+00:000006CC 53636F7265626F61	   362: .byte    "Scoreboard port:    "
+00:000006D4 726420706F72743A
+00:000006DC 20202020
+00:000006E0 00              	   363: .byte    0
+                            	   364: .balign 4
+                            	   365: eliteTxStatusHelp:
+00:000006E4 2A456C6974655478	   366: .byte    "*EliteTxStatus shows the configuration for scoreboard transmissions."
+00:000006EC 5374617475732073
+00:000006F4 686F777320746865
+00:000006FC 20636F6E66696775
+00:00000704 726174696F6E2066
+00:0000070C 6F722073636F7265
+00:00000714 626F617264207472
+00:0000071C 616E736D69737369
+00:00000724 6F6E732E
+00:00000728 0D              	   367: .byte    13
+00:00000729 53796E7461783A20	   368: .byte    "Syntax: *EliteTxStatus"
+00:00000731 2A456C6974655478
+00:00000739 537461747573
+00:0000073F 00              	   369: .byte    0
+                            	   370: .balign 4
+                            	   371: InitialiseModule:
+00:00000740 00402DE9        	   372:  STMFD   R13!, {R14}
+00:00000744 00209CE5        	   373:  LDR     R2, [R12]
+00:00000748 000032E3        	   374:  TEQ     R2, #0
+00:0000074C 1000001A        	   375:  BNE     init1
+00:00000750 0600A0E3        	   376:  MOV     R0, #6
+00:00000754 4830A0E3        	   377:  MOV     R3, #workspaceSize
+00:00000758 1E0002EF        	   378:  SWI     XOS_Module
+00:0000075C 0080BD68        	   379:  LDMVSFD R13!, {PC}
+00:00000760 00208CE5        	   380:  STR     R2, [R12]
+00:00000764 0010A0E3        	   381:  MOV     R1, #0
+00:00000768 181082E5        	   382:  STR     R1, [R2, #econetHandle]
+00:0000076C 101082E5        	   383:  STR     R1, [R2, #netTally]
+00:00000770 141082E5        	   384:  STR     R1, [R2, #netDeaths]
+00:00000774 081082E5        	   385:  STR     R1, [R2, #scoreNetwork]
+00:00000778 041082E5        	   386:  STR     R1, [R2, #scoreStation]
+00:0000077C 001082E5        	   387:  STR     R1, [R2, #scorePort]
+00:00000780 341082E5        	   388:  STR     R1, [R2, #scoreEnabled]
+00:00000784 0010E0E3        	   389:  MVN     R1, #0
+00:00000788 0C1082E5        	   390:  STR     R1, [R2, #currentRank]
+00:0000078C 6410A0E3        	   391:  MOV     R1, #100
+00:00000790 381082E5        	   392:  STR     R1, [R2, #scoreInterval]
+                            	   393: init1:
+00:00000794 380092E5        	   394:  LDR     R0, [R2, #scoreInterval]
+00:00000798 48108FE2        	   395:  ADR     R1, TransmitData
+00:0000079C 3C0002EF        	   396:  SWI     XOS_CallEvery
+00:000007A0 3200A0E3        	   397:  MOV     R0, #50
+00:000007A4 231E8FE2        	   398:  ADR     R1, MonitorRank
+00:000007A8 3C0002EF        	   399:  SWI     XOS_CallEvery
+00:000007AC 0080FDE8        	   400:  LDMFD   R13!, {PC}^
+                            	   401: FinaliseModule:
+00:000007B0 00402DE9        	   402:  STMFD   R13!, {R14}
+00:000007B4 00C09CE5        	   403:  LDR     R12, [R12]
+00:000007B8 28008FE2        	   404:  ADR     R0, TransmitData
+00:000007BC 0C10A0E1        	   405:  MOV     R1, R12
+00:000007C0 3D0002EF        	   406:  SWI     XOS_RemoveTickerEvent
+00:000007C4 210E8FE2        	   407:  ADR     R0, MonitorRank
+00:000007C8 0C10A0E1        	   408:  MOV     R1, R12
+00:000007CC 3D0002EF        	   409:  SWI     XOS_RemoveTickerEvent
+00:000007D0 18009CE5        	   410:  LDR     R0, [R12, #econetHandle]
+00:000007D4 000030E3        	   411:  TEQ     R0, #0
+00:000007D8 0800061F        	   412:  SWINE   XEconet_AbandonTransmit
+00:000007DC 0010A0E3        	   413:  MOV     R1, #0
+00:000007E0 18108CE5        	   414:  STR     R1, [R12, #econetHandle]
+00:000007E4 0080FDE8        	   415:  LDMFD   R13!, {PC}^
+                            	   416: TransmitData:
+00:000007E8 FF1F2DE9        	   417:  STMFD   R13!, {R0-R12}
+00:000007EC 0F50A0E1        	   418:  MOV     R5, PC
+00:000007F0 0340C5E3        	   419:  BIC     R4, R5, #3
+00:000007F4 03F034E3        	   420:  TEQP    R4, #3
+00:000007F8 0000A0E1        	   421:  MOV     R0, R0
+00:000007FC 20402DE9        	   422:  STMFD   R13!, {R5, R14}
+00:00000800 B8029FE5        	   423:  LDR     R0, string1Addr
+00:00000804 0010A0E1        	   424:  MOV     R1, R0
+00:00000808 3A0002EF        	   425:  SWI     XOS_ValidateAddress
+00:0000080C 6B00006A        	   426:  BVS     skipT
+00:00000810 6A00002A        	   427:  BCS     skipT
+00:00000814 000090E5        	   428:  LDR     R0, [R0]
+00:00000818 A4129FE5        	   429:  LDR     R1, string1Match
+00:0000081C 010050E1        	   430:  CMP     R0, R1
+00:00000820 6600001A        	   431:  BNE     skipT
+00:00000824 9C029FE5        	   432:  LDR     R0, string2Addr
+00:00000828 0010A0E1        	   433:  MOV     R1, R0
+00:0000082C 3A0002EF        	   434:  SWI     XOS_ValidateAddress
+00:00000830 6200006A        	   435:  BVS     skipT
+00:00000834 6100002A        	   436:  BCS     skipT
+00:00000838 000090E5        	   437:  LDR     R0, [R0]
+00:0000083C 88129FE5        	   438:  LDR     R1, string2Match
+00:00000840 010050E1        	   439:  CMP     R0, R1
+00:00000844 5D00001A        	   440:  BNE     skipT
+00:00000848 80029FE5        	   441:  LDR     R0, string3Addr
+00:0000084C 0010A0E1        	   442:  MOV     R1, R0
+00:00000850 3A0002EF        	   443:  SWI     XOS_ValidateAddress
+00:00000854 5900006A        	   444:  BVS     skipT
+00:00000858 5800002A        	   445:  BCS     skipT
+00:0000085C 000090E5        	   446:  LDR     R0, [R0]
+00:00000860 6C129FE5        	   447:  LDR     R1, string3Match
+00:00000864 010050E1        	   448:  CMP     R0, R1
+00:00000868 5400001A        	   449:  BNE     skipT
+00:0000086C 1C009CE5        	   450:  LDR     R0, [R12, #semaphore]
+00:00000870 000030E3        	   451:  TEQ     R0, #0
+00:00000874 5300001A        	   452:  BNE     returnT
+00:00000878 0100A0E3        	   453:  MOV     R0, #1
+00:0000087C 1C008CE5        	   454:  STR     R0, [R12, #semaphore]
+00:00000880 18009CE5        	   455:  LDR     R0, [R12, #econetHandle]
+00:00000884 000030E3        	   456:  TEQ     R0, #0
+00:00000888 0800061F        	   457:  SWINE   XEconet_AbandonTransmit
+00:0000088C 18029FE5        	   458:  LDR     R0, cmdrName
+00:00000890 041080E2        	   459:  ADD     R1, R0, #4
+00:00000894 3A0002EF        	   460:  SWI     XOS_ValidateAddress
+00:00000898 4800006A        	   461:  BVS     skipT
+00:0000089C 4700002A        	   462:  BCS     skipT
+00:000008A0 002090E5        	   463:  LDR     R2, [R0]
+00:000008A4 FF0012E3        	   464:  TST     R2, #0x000000FF
+00:000008A8 0D208203        	   465:  ORREQ   R2, R2, #0x0000000D
+00:000008AC FF0C12E3        	   466:  TST     R2, #0x0000FF00
+00:000008B0 0D2C8203        	   467:  ORREQ   R2, R2, #0x00000D00
+00:000008B4 FF0812E3        	   468:  TST     R2, #0x00FF0000
+00:000008B8 0D288203        	   469:  ORREQ   R2, R2, #0x000D0000
+00:000008BC FF0412E3        	   470:  TST     R2, #0xFF000000
+00:000008C0 0D248203        	   471:  ORREQ   R2, R2, #0x0D000000
+00:000008C4 20208CE5        	   472:  STR     R2, [R12, #trName]
+00:000008C8 042090E5        	   473:  LDR     R2, [R0, #4]
+00:000008CC FF0012E3        	   474:  TST     R2, #0x000000FF
+00:000008D0 0D208203        	   475:  ORREQ   R2, R2, #0x0000000D
+00:000008D4 FF0C12E3        	   476:  TST     R2, #0x0000FF00
+00:000008D8 0D2C8203        	   477:  ORREQ   R2, R2, #0x00000D00
+00:000008DC FF0812E3        	   478:  TST     R2, #0x00FF0000
+00:000008E0 0D288203        	   479:  ORREQ   R2, R2, #0x000D0000
+00:000008E4 FF24C2E3        	   480:  AND     R2, R2, #0x00FFFFFF
+00:000008E8 0D2482E3        	   481:  ORR     R2, R2, #0x0D000000
+00:000008EC 24208CE5        	   482:  STR     R2, [R12, #trName+4]
+00:000008F0 0130A0E3        	   483:  MOV     R3, #1
+00:000008F4 BC019FE5        	   484:  LDR     R0, cmdrLegal
+00:000008F8 0010A0E1        	   485:  MOV     R1, R0
+00:000008FC 3A0002EF        	   486:  SWI     XOS_ValidateAddress
+00:00000900 2E00006A        	   487:  BVS     skipT
+00:00000904 2D00002A        	   488:  BCS     skipT
+00:00000908 002090E5        	   489:  LDR     R2, [R0]
+00:0000090C 280052E3        	   490:  CMP     R2, #0x28
+00:00000910 0030A0D3        	   491:  MOVLE   R3, #0
+00:00000914 FA0F52E3        	   492:  CMP     R2, #0x3E8
+00:00000918 0330A0C3        	   493:  MOVGT   R3, #3
+00:0000091C 2830CCE5        	   494:  STRB    R3, [R12, #trLegal]
+00:00000920 94019FE5        	   495:  LDR     R0, cmdrCondition
+00:00000924 0010A0E1        	   496:  MOV     R1, R0
+00:00000928 3A0002EF        	   497:  SWI     XOS_ValidateAddress
+00:0000092C 2300006A        	   498:  BVS     skipT
+00:00000930 2200002A        	   499:  BCS     skipT
+00:00000934 002090E5        	   500:  LDR     R2, [R0]
+00:00000938 012082E2        	   501:  ADD     R2, R2, #1
+00:0000093C 040052E3        	   502:  CMP     R2, #4
+00:00000940 05005213        	   503:  CMPNE   R2, #5
+00:00000944 0320A003        	   504:  MOVEQ   R2, #3
+00:00000948 060052E3        	   505:  CMP     R2, #6
+00:0000094C 0020A0A3        	   506:  MOVGE   R2, #0
+00:00000950 2920CCE5        	   507:  STRB    R2, [R12, #trCondition]
+00:00000954 1020DCE5        	   508:  LDRB    R2, [R12, #netTally]
+00:00000958 2A20CCE5        	   509:  STRB    R2, [R12, #trKill]
+00:0000095C 1420DCE5        	   510:  LDRB    R2, [R12, #netDeaths]
+00:00000960 2B20CCE5        	   511:  STRB    R2, [R12, #trDeaths]
+00:00000964 48019FE5        	   512:  LDR     R0, cmdrCredits
+00:00000968 0010A0E1        	   513:  MOV     R1, R0
+00:0000096C 3A0002EF        	   514:  SWI     XOS_ValidateAddress
+00:00000970 1200006A        	   515:  BVS     skipT
+00:00000974 1100002A        	   516:  BCS     skipT
+00:00000978 002090E5        	   517:  LDR     R2, [R0]
+00:0000097C 2C208CE5        	   518:  STR     R2, [R12, #trCredits]
+00:00000980 0420A0E3        	   519:  MOV     R2, #4
+00:00000984 30208CE5        	   520:  STR     R2, [R12, #trMachine]
+00:00000988 00109CE5        	   521:  LDR     R1, [R12, #scorePort]
+00:0000098C 000031E3        	   522:  TEQ     R1, #0
+00:00000990 04209C15        	   523:  LDRNE   R2, [R12, #scoreStation]
+00:00000994 00003213        	   524:  TEQNE   R2, #0
+00:00000998 0800000A        	   525:  BEQ     skipT
+00:0000099C 0000A0E3        	   526:  MOV     R0, #0
+00:000009A0 08309CE5        	   527:  LDR     R3, [R12, #scoreNetwork]
+00:000009A4 20408CE2        	   528:  ADD     R4, R12, #transmitBuffer
+00:000009A8 1450A0E3        	   529:  MOV     R5, #20
+00:000009AC 0160A0E3        	   530:  MOV     R6, #1
+00:000009B0 0070A0E3        	   531:  MOV     R7, #0
+00:000009B4 060006EF        	   532:  SWI     XEconet_StartTransmit
+00:000009B8 0000A063        	   533:  MOVVS   R0, #0
+00:000009BC 18008CE5        	   534:  STR     R0, [R12, #econetHandle]
+                            	   535: skipT:
+00:000009C0 0000A0E3        	   536:  MOV     R0, #0
+00:000009C4 1C008CE5        	   537:  STR     R0, [R12, #semaphore]
+                            	   538: returnT:
+00:000009C8 2040BDE8        	   539:  LDMFD   R13!, {R5, R14}
+00:000009CC 00F035E3        	   540:  TEQP    R5, #0
+00:000009D0 0000A0E1        	   541:  MOV     R0, R0
+00:000009D4 FF1FBDE8        	   542:  LDMFD   R13!, {R0-R12}
+00:000009D8 0EF0A0E1        	   543:  MOV     PC, R14
+                            	   544: MonitorRank:
+00:000009DC FF1F2DE9        	   545:  STMFD   R13!, {R0-R12}
+00:000009E0 0F50A0E1        	   546:  MOV     R5, PC
+00:000009E4 0340C5E3        	   547:  BIC     R4, R5, #3
+00:000009E8 03F034E3        	   548:  TEQP    R4, #3
+00:000009EC 0000A0E1        	   549:  MOV     R0, R0
+00:000009F0 20402DE9        	   550:  STMFD   R13!, {R5, R14}
+00:000009F4 C4009FE5        	   551:  LDR     R0, string1Addr
+00:000009F8 0010A0E1        	   552:  MOV     R1, R0
+00:000009FC 3A0002EF        	   553:  SWI     XOS_ValidateAddress
+00:00000A00 2400006A        	   554:  BVS     skipM
+00:00000A04 2300002A        	   555:  BCS     skipM
+00:00000A08 000090E5        	   556:  LDR     R0, [R0]
+00:00000A0C B0109FE5        	   557:  LDR     R1, string1Match
+00:00000A10 010050E1        	   558:  CMP     R0, R1
+00:00000A14 1F00001A        	   559:  BNE     skipM
+00:00000A18 A8009FE5        	   560:  LDR     R0, string2Addr
+00:00000A1C 0010A0E1        	   561:  MOV     R1, R0
+00:00000A20 3A0002EF        	   562:  SWI     XOS_ValidateAddress
+00:00000A24 1B00006A        	   563:  BVS     skipM
+00:00000A28 1A00002A        	   564:  BCS     skipM
+00:00000A2C 000090E5        	   565:  LDR     R0, [R0]
+00:00000A30 94109FE5        	   566:  LDR     R1, string2Match
+00:00000A34 010050E1        	   567:  CMP     R0, R1
+00:00000A38 1600001A        	   568:  BNE     skipM
+00:00000A3C 8C009FE5        	   569:  LDR     R0, string3Addr
+00:00000A40 0010A0E1        	   570:  MOV     R1, R0
+00:00000A44 3A0002EF        	   571:  SWI     XOS_ValidateAddress
+00:00000A48 1200006A        	   572:  BVS     skipM
+00:00000A4C 1100002A        	   573:  BCS     skipM
+00:00000A50 000090E5        	   574:  LDR     R0, [R0]
+00:00000A54 78109FE5        	   575:  LDR     R1, string3Match
+00:00000A58 010050E1        	   576:  CMP     R0, R1
+00:00000A5C 0D00001A        	   577:  BNE     skipM
+00:00000A60 48009FE5        	   578:  LDR     R0, cmdrRank
+00:00000A64 0010A0E1        	   579:  MOV     R1, R0
+00:00000A68 3A0002EF        	   580:  SWI     XOS_ValidateAddress
+00:00000A6C 0900006A        	   581:  BVS     skipM
+00:00000A70 0800002A        	   582:  BCS     skipM
+00:00000A74 0C109CE5        	   583:  LDR     R1, [R12, #currentRank]
+00:00000A78 002090E5        	   584:  LDR     R2, [R0]
+00:00000A7C 0C208CE5        	   585:  STR     R2, [R12, #currentRank]
+00:00000A80 010071E3        	   586:  CMN     R1, #1
+00:00000A84 0300000A        	   587:  BEQ     skipM
+00:00000A88 010052E1        	   588:  CMP     R2, R1
+00:00000A8C 10309CC5        	   589:  LDRGT   R3, [R12, #netTally]
+00:00000A90 013083C2        	   590:  ADDGT   R3, R3, #1
+00:00000A94 10308CC5        	   591:  STRGT   R3, [R12, #netTally]
+                            	   592: skipM:
+00:00000A98 2040BDE8        	   593:  LDMFD   R13!, {R5, R14}
+00:00000A9C 00F035E3        	   594:  TEQP    R5, #0
+00:00000AA0 0000A0E1        	   595:  MOV     R0, R0
+00:00000AA4 FF1FBDE8        	   596:  LDMFD   R13!, {R0-R12}
+00:00000AA8 0EF0A0E1        	   597:  MOV     PC, R14
+                            	   598: cmdrName:
+00:00000AAC 98A60500        	   599: .long    0x0005A698
+                            	   600: cmdrRank:
+00:00000AB0 60A90500        	   601: .long    0x0005A960
+                            	   602: cmdrCredits:
+00:00000AB4 4C530600        	   603: .long    0x0006534C
+                            	   604: cmdrLegal:
+00:00000AB8 98530600        	   605: .long    0x00065398
+                            	   606: cmdrCondition:
+00:00000ABC A0530600        	   607: .long    0x000653A0
+                            	   608: string1Addr:
+00:00000AC0 14AF0100        	   609: .long    0x0001AF14
+                            	   610: string1Match:
+00:00000AC4 4752494E        	   611: .long    0x4E495247
+                            	   612: string2Addr:
+00:00000AC8 00AF0100        	   613: .long    0x0001AF00
+                            	   614: string2Match:
+00:00000ACC 41525245        	   615: .long    0x45525241
+                            	   616: string3Addr:
+00:00000AD0 08150700        	   617: .long    0x00071508
+                            	   618: string3Match:
+00:00000AD4 312E3134        	   619: .long    0x34312E31
+                            	   620: 
 
 
 Symbols by name:
 CODE                             S:00000000
-FinaliseModule                   A:000000CC
-InitialiseModule                 A:00000050
-MonitorRank                      A:000002F8
-TransmitData                     A:00000104
+EliteTxInterval                  A:000002F8
+EliteTxPort                      A:0000012C
+EliteTxReset                     A:00000534
+EliteTxStart                     A:00000484
+EliteTxStation                   A:00000204
+EliteTxStatus                    A:00000598
+EliteTxStop                      A:000003DC
+FinaliseModule                   A:000007B0
+InitialiseModule                 A:00000740
+MonitorRank                      A:000009DC
+TransmitData                     A:000007E8
 XEconet_AbandonTransmit          S:00060008
+XEconet_ReadStationNumber        S:0006000F
 XEconet_StartTransmit            S:00060006
 XOS_CallEvery                    S:0002003C
+XOS_ConvertCardinal1             S:000200D5
+XOS_ConvertCardinal4             S:000200D8
+XOS_EvaluateExpression           S:0002002D
 XOS_Module                       S:0002001E
+XOS_Newline                      S:00020003
 XOS_RemoveTickerEvent            S:0002003D
 XOS_ValidateAddress              S:0002003A
-cmdrCondition                    A:000003D8
-cmdrCredits                      A:000003D0
-cmdrLegal                        A:000003D4
-cmdrName                         A:000003C8
-cmdrRank                         A:000003CC
+XOS_Write0                       S:00020002
+XOS_WriteC                       S:00020000
+XOS_WriteI                       S:00020100
+cmdrCondition                    A:00000ABC
+cmdrCredits                      A:00000AB4
+cmdrLegal                        A:00000AB8
+cmdrName                         A:00000AAC
+cmdrRank                         A:00000AB0
 currentRank                      S:0000000C
 econetHandle                     S:00000018
+eliteTxIntervalError             A:0000033C
+eliteTxIntervalHelp              A:00000368
+eliteTxPortError                 A:00000178
+eliteTxPortHelp                  A:000001A4
+eliteTxResetHelp                 A:0000054C
+eliteTxStartError                A:000004C8
+eliteTxStartHelp                 A:000004F0
+eliteTxStationError              A:00000248
+eliteTxStationHelp               A:0000027C
+eliteTxStatusHelp                A:000006E4
+eliteTxStopError                 A:0000041C
+eliteTxStopHelp                  A:00000444
+endWorkspace                     S:00000048
 help                             A:0000002C
-init1                            A:000000B0
+helpAndCommandTable              A:00000050
+init1                            A:00000794
+intv1                            A:0000032C
 netDeaths                        S:00000014
 netTally                         S:00000010
-returnT                          A:000002E4
+port1                            A:00000168
+returnT                          A:000009C8
+scoreEnabled                     S:00000034
+scoreInterval                    S:00000038
 scoreNetwork                     S:00000008
 scorePort                        S:00000000
 scoreStation                     S:00000004
 semaphore                        S:0000001C
-skipM                            A:000003B4
-skipT                            A:000002DC
-string1Addr                      A:000003DC
-string1Match                     A:000003E0
-string2Addr                      A:000003E4
-string2Match                     A:000003E8
-string3Addr                      A:000003EC
-string3Match                     A:000003F0
+skipM                            A:00000A98
+skipT                            A:000009C0
+star1                            A:000004B8
+startWorkspace                   S:00000000
+stat1                            A:00000234
+stat2                            A:00000238
+statusDisabled                   A:0000066C
+statusEnabled                    A:00000650
+statusInterval1                  A:0000068C
+statusInterval2                  A:000006A4
+statusPort                       A:000006CC
+statusStation                    A:000006B4
+stop1                            A:0000040C
+string1Addr                      A:00000AC0
+string1Match                     A:00000AC4
+string2Addr                      A:00000AC8
+string2Match                     A:00000ACC
+string3Addr                      A:00000AD0
+string3Match                     A:00000AD4
+stringBuffer                     S:0000003C
 title                            A:0000001C
 trCondition                      S:00000029
 trCredits                        S:0000002C
@@ -349,20 +830,22 @@ trLegal                          S:00000028
 trMachine                        S:00000030
 trName                           S:00000020
 transmitBuffer                   S:00000020
+workspaceSize                    S:00000048
 
 Symbols by value:
-00000000 scorePort
+00000000 startWorkspace
 00000000 CODE
+00000000 scorePort
 00000004 scoreStation
 00000008 scoreNetwork
 0000000C currentRank
 00000010 netTally
 00000014 netDeaths
 00000018 econetHandle
-0000001C title
 0000001C semaphore
-00000020 trName
+0000001C title
 00000020 transmitBuffer
+00000020 trName
 00000028 trLegal
 00000029 trCondition
 0000002A trKill
@@ -370,28 +853,73 @@ Symbols by value:
 0000002C trCredits
 0000002C help
 00000030 trMachine
-00000050 InitialiseModule
-000000B0 init1
-000000CC FinaliseModule
-00000104 TransmitData
-000002DC skipT
-000002E4 returnT
-000002F8 MonitorRank
-000003B4 skipM
-000003C8 cmdrName
-000003CC cmdrRank
-000003D0 cmdrCredits
-000003D4 cmdrLegal
-000003D8 cmdrCondition
-000003DC string1Addr
-000003E0 string1Match
-000003E4 string2Addr
-000003E8 string2Match
-000003EC string3Addr
-000003F0 string3Match
+00000034 scoreEnabled
+00000038 scoreInterval
+0000003C stringBuffer
+00000048 endWorkspace
+00000048 workspaceSize
+00000050 helpAndCommandTable
+0000012C EliteTxPort
+00000168 port1
+00000178 eliteTxPortError
+000001A4 eliteTxPortHelp
+00000204 EliteTxStation
+00000234 stat1
+00000238 stat2
+00000248 eliteTxStationError
+0000027C eliteTxStationHelp
+000002F8 EliteTxInterval
+0000032C intv1
+0000033C eliteTxIntervalError
+00000368 eliteTxIntervalHelp
+000003DC EliteTxStop
+0000040C stop1
+0000041C eliteTxStopError
+00000444 eliteTxStopHelp
+00000484 EliteTxStart
+000004B8 star1
+000004C8 eliteTxStartError
+000004F0 eliteTxStartHelp
+00000534 EliteTxReset
+0000054C eliteTxResetHelp
+00000598 EliteTxStatus
+00000650 statusEnabled
+0000066C statusDisabled
+0000068C statusInterval1
+000006A4 statusInterval2
+000006B4 statusStation
+000006CC statusPort
+000006E4 eliteTxStatusHelp
+00000740 InitialiseModule
+00000794 init1
+000007B0 FinaliseModule
+000007E8 TransmitData
+000009C0 skipT
+000009C8 returnT
+000009DC MonitorRank
+00000A98 skipM
+00000AAC cmdrName
+00000AB0 cmdrRank
+00000AB4 cmdrCredits
+00000AB8 cmdrLegal
+00000ABC cmdrCondition
+00000AC0 string1Addr
+00000AC4 string1Match
+00000AC8 string2Addr
+00000ACC string2Match
+00000AD0 string3Addr
+00000AD4 string3Match
+00020000 XOS_WriteC
+00020002 XOS_Write0
+00020003 XOS_Newline
 0002001E XOS_Module
+0002002D XOS_EvaluateExpression
 0002003A XOS_ValidateAddress
 0002003C XOS_CallEvery
 0002003D XOS_RemoveTickerEvent
+000200D5 XOS_ConvertCardinal1
+000200D8 XOS_ConvertCardinal4
+00020100 XOS_WriteI
 00060006 XEconet_StartTransmit
 00060008 XEconet_AbandonTransmit
+0006000F XEconet_ReadStationNumber
