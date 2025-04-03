@@ -1,3 +1,3 @@
-| !Run file for !Scoreboard
+| !Run file for !EliteNet
 WimpSlot -min 168K -max 168K
 Run <Obey$Dir>.!RunImage

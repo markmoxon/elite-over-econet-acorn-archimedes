@@ -50,20 +50,20 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "0.10 (02 Apr 2025)"
+.byte    "0.10 (03 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
-.byte    "EliteTxPort"
+.byte    "EliteStatus"
 .byte    0
 .balign 4
-.long    EliteTxPort
-.byte    1
+.long    EliteStatus
 .byte    0
-.byte    1
+.byte    0
+.byte    0
 .byte    0
 .long    0
-.long    eliteTxPortHelp
+.long    eliteStatusHelp
 .byte    "EliteTxStation"
 .byte    0
 .balign 4
@@ -74,6 +74,16 @@ helpAndCommandTable:
 .byte    0
 .long    0
 .long    eliteTxStationHelp
+.byte    "EliteTxPort"
+.byte    0
+.balign 4
+.long    EliteTxPort
+.byte    1
+.byte    0
+.byte    1
+.byte    0
+.long    0
+.long    eliteTxPortHelp
 .byte    "EliteTxInterval"
 .byte    0
 .balign 4
@@ -84,16 +94,6 @@ helpAndCommandTable:
 .byte    0
 .long    0
 .long    eliteTxIntervalHelp
-.byte    "EliteTxStop"
-.byte    0
-.balign 4
-.long    EliteTxStop
-.byte    0
-.byte    0
-.byte    0
-.byte    0
-.long    0
-.long    eliteTxStopHelp
 .byte    "EliteTxStart"
 .byte    0
 .balign 4
@@ -104,6 +104,16 @@ helpAndCommandTable:
 .byte    0
 .long    0
 .long    eliteTxStartHelp
+.byte    "EliteTxStop"
+.byte    0
+.balign 4
+.long    EliteTxStop
+.byte    0
+.byte    0
+.byte    0
+.byte    0
+.long    0
+.long    eliteTxStopHelp
 .byte    "EliteTxReset"
 .byte    0
 .balign 4
@@ -114,16 +124,6 @@ helpAndCommandTable:
 .byte    0
 .long    0
 .long    eliteTxResetHelp
-.byte    "EliteTxStatus"
-.byte    0
-.balign 4
-.long    EliteTxStatus
-.byte    0
-.byte    0
-.byte    0
-.byte    0
-.long    0
-.long    eliteTxStatusHelp
 .long    0
 EliteTxPort:
  STMFD   R13!, {R14}
@@ -134,9 +134,9 @@ EliteTxPort:
  BVS     port1
  TST     R1, #0
  BNE     port1
- CMP     R2, #0
- BLE     port1
- CMP     R2, #255
+ CMP     R2, #1
+ BLT     port1
+ CMP     R2, #254
  BGT     port1
  STR     R2, [R12, #scorePort]
  MOV     R0, #0
@@ -148,13 +148,13 @@ port1:
  MOVS    PC, R14
 eliteTxPortError:
 .long    0
-.byte    "Invalid port number (must be 1 to 255)"
+.byte    "Invalid port number (it must be in the range 1 to 254)"
 .byte    0
 .balign 4
 eliteTxPortHelp:
 .byte    "*EliteTxPort sets the port number for transmitting scores."
 .byte    13
-.byte    "Syntax: *EliteTxPort <port number>"
+.byte    "Syntax: *EliteTxPort <port>"
 .byte    0
 .balign 4
 EliteTxStation:
@@ -167,8 +167,8 @@ EliteTxStation:
  BEQ     stat2
  CMN     R3, #1
  MOVEQ   R3, #0
- STR     R2, [R12, #scoreNetwork]
- STR     R3, [R12, #scoreStation]
+ STR     R2, [R12, #scoreStation]
+ STR     R3, [R12, #scoreNetwork]
  MOV     R0, #0
 stat1:
  LDMFD   R13!, {PC}
@@ -179,13 +179,14 @@ stat2:
  MOVS    PC, R14
 eliteTxStationError:
 .long    0
-.byte    "Invalid station (must be in the format 0.123)"
+.byte    "Invalid station (it must be in the format 123 or 1.234)"
 .byte    0
 .balign 4
 eliteTxStationHelp:
-.byte    "*EliteTxStation sets the network and station number for transmitting scores."
+.byte    "*EliteTxStation sets the network and station number "
+.byte    "for transmitting scores."
 .byte    13
-.byte    "Syntax: *EliteTxStation <network>.<station>"
+.byte    "Syntax: *EliteTxStation [<network>.]<station>"
 .byte    0
 .balign 4
 EliteTxInterval:
@@ -194,22 +195,33 @@ EliteTxInterval:
  ADD     R1, R12, #stringBuffer
  MOV     R2, #12
  SWI     XOS_EvaluateExpression
- BVS     intv1
+ BVS     intv2
  TST     R1, #0
- BNE     intv1
+ BNE     intv2
  CMP     R2, #100
- BLT     intv1
+ BLT     intv2
  STR     R2, [R12, #scoreInterval]
+ LDR     R1, [R12, #scoreEnabled]
+ TEQ     R1, #0
+ BEQ     intv1
+ ADR     R0, TransmitData
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
+ LDR     R0, [R12, #scoreInterval]
+ ADR     R1, TransmitData
+ MOV     R2, R12
+ SWI     XOS_CallEvery
+intv1:
  MOV     R0, #0
  LDMFD   R13!, {PC}
-intv1:
+intv2:
  ADR     R0, eliteTxIntervalError
  LDMFD   R13!, {R14}
  ORR     R14, R14, #1<<28
  MOVS    PC, R14
 eliteTxIntervalError:
 .long    0
-.byte    "Invalid interval (must be at least 100)"
+.byte    "Invalid interval (it must be at least 100)"
 .byte    0
 .balign 4
 eliteTxIntervalHelp:
@@ -226,7 +238,7 @@ EliteTxStop:
  TEQ     R1, #0
  BEQ     stop1
  MOV     R0, #0
- STR     R2, [R12, #scoreEnabled]
+ STR     R0, [R12, #scoreEnabled]
  ADR     R0, TransmitData
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
@@ -254,22 +266,38 @@ EliteTxStart:
  LDR     R1, [R12, #scoreEnabled]
  TEQ     R1, #1
  BEQ     star1
+ LDR     R1, [R12, #scorePort]
+ TEQ     R1, #0
+ LDRNE   R2, [R12, #scoreStation]
+ TEQNE   R2, #0
+ BEQ     star2
  MOV     R0, #1
  STR     R2, [R12, #scoreEnabled]
- LDR     R0, [R2, #scoreInterval]
+ LDR     R0, [R12, #scoreInterval]
  ADR     R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
  MOV     R0, #0
  LDMFD   R13!, {PC}
 star1:
- ADR     R0, eliteTxStartError
+ ADR     R0, eliteTxStartError1
  LDMFD   R13!, {R14}
  ORR     R14, R14, #1<<28
  MOVS    PC, R14
-eliteTxStartError:
+star2:
+ ADR     R0, eliteTxStartError2
+ LDMFD   R13!, {R14}
+ ORR     R14, R14, #1<<28
+ MOVS    PC, R14
+eliteTxStartError1:
 .long    0
 .byte    "Transmissions are already enabled"
+.byte    0
+.balign 4
+eliteTxStartError2:
+.long    0
+.byte    "Both the port and station number must be "
+.byte    "non-zero to enable transmissions"
 .byte    0
 .balign 4
 eliteTxStartHelp:
@@ -291,9 +319,14 @@ eliteTxResetHelp:
 .byte    "Syntax: *EliteTxReset"
 .byte    0
 .balign 4
-EliteTxStatus:
+EliteStatus:
  STMFD   R13!, {R14}
  LDR     R12, [R12]
+ SWI     XOS_Newline
+ ADR     R0, statusIntro
+ SWI     XOS_Write0
+ SWI     XOS_Newline
+ SWI     XOS_Newline
  LDR     R0, [R12, #scoreEnabled]
  TEQ     R0, #0
  ADREQ   R0, statusDisabled
@@ -337,7 +370,27 @@ EliteTxStatus:
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
  SWI     XOS_Newline
+ ADR     R0, statusKills
+ SWI     XOS_Write0
+ LDR     R0, [R12, #netTally]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal1
+ SWI     XOS_Write0
+ MOV     R0, #0x2F
+ SWI     XOS_WriteC
+ LDR     R0, [R12, #netDeaths]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_ConvertCardinal1
+ SWI     XOS_Write0
+ SWI     XOS_Newline
+ SWI     XOS_Newline
  LDMFD   R13!, {PC}
+statusIntro:
+.byte    "Current status of Elite over Econet:"
+.byte    0
+.balign 4
 statusEnabled:
 .byte    "Transmissions:      Enabled"
 .byte    0
@@ -362,10 +415,14 @@ statusPort:
 .byte    "Scoreboard port:    "
 .byte    0
 .balign 4
-eliteTxStatusHelp:
-.byte    "*EliteTxStatus shows the configuration for scoreboard transmissions."
+statusKills:
+.byte    "Kills/deaths:       "
+.byte    0
+.balign 4
+eliteStatusHelp:
+.byte    "*EliteStatus shows the current status of Elite over Econet."
 .byte    13
-.byte    "Syntax: *EliteTxStatus"
+.byte    "Syntax: *EliteStatus"
 .byte    0
 .balign 4
 InitialiseModule:
@@ -388,12 +445,9 @@ InitialiseModule:
  STR     R1, [R2, #scoreEnabled]
  MVN     R1, #0
  STR     R1, [R2, #currentRank]
- MOV     R1, #100
+ MOV     R1, #1500
  STR     R1, [R2, #scoreInterval]
 init1:
- LDR     R0, [R2, #scoreInterval]
- ADR     R1, TransmitData
- SWI     XOS_CallEvery
  MOV     R0, #50
  ADR     R1, MonitorRank
  SWI     XOS_CallEvery

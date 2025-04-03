@@ -49,8 +49,8 @@ def convert(input_file, output_file):
             line = re.sub(r"^\\", r"REM", line)
             line = re.sub(r"\\", r": REM", line)
 
-            # Change GameCode.bin to GameCode.bin
-            line = re.sub(r"GameCode\.bin", r"GameCode", line)
+            # Change EliteNet.bin to EliteNet
+            line = re.sub(r"EliteNet\.bin", r"EliteNet", line)
 
         if in_code:
             # Change ALIGN to FN_AlignWithZeroes
@@ -77,9 +77,9 @@ def convert(input_file, output_file):
 print("Converting 1-source-files/EliteOverEconet.arm")
 
 source_file = open("1-source-files/main-sources/EliteOverEconet.arm", "r")
-basic_file = open("3-assembled-output/EliteOverEconet,fff", "w")
+basic_file = open("3-assembled-output/EliteNetSc,fff", "w")
 convert(source_file, basic_file)
 source_file.close()
 basic_file.close()
 
-print("3-assembled-output/EliteOverEconet,fff file saved")
+print("3-assembled-output/EliteNetSc,fff file saved")

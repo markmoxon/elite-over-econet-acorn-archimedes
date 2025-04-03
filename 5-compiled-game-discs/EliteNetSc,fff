@@ -1,188 +1,188 @@
-\ ******************************************************************************
-\
-\ ELITE OVER ECONET MODULE SOURCE
-\
-\ The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
-\ in the documentation are entirely my fault
-\
-\ The terminology and notations used in this commentary are explained at
-\ https://elite.bbcelite.com/terminology
-\
-\ The deep dive articles referred to in this commentary can be found at
-\ https://elite.bbcelite.com/deep_dives
-\
-\ ------------------------------------------------------------------------------
-\
-\ This source file produces the following binary file:
-\
-\   * EliteNet.bin
-\
-\ ******************************************************************************
+REM ******************************************************************************
+REM
+REM ELITE OVER ECONET MODULE SOURCE
+REM
+REM The commentary is copyright Mark Moxon, and any misunderstandings or mistakes
+REM in the documentation are entirely my fault
+REM
+REM The terminology and notations used in this commentary are explained at
+REM https;//elite.bbcelite.com/terminology
+REM
+REM The deep dive articles referred to in this commentary can be found at
+REM https;//elite.bbcelite.com/deep_dives
+REM
+REM ------------------------------------------------------------------------------
+REM
+REM This source file produces the following binary file;
+REM
+REM   * EliteNet
+REM
+REM ******************************************************************************
 
- CODE = &00000000                   \ The build address for the Module
+ CODE = &00000000                   : REM The build address for the Module
 
-\ ******************************************************************************
-\
-\ Operating system SWI numbers
-\
-\ ******************************************************************************
+REM ******************************************************************************
+REM
+REM Operating system SWI numbers
+REM
+REM ******************************************************************************
 
- XOS_WriteC = &20000                \ The operating system call for printing a
-                                    \ character
+ XOS_WriteC = &20000                : REM The operating system call for printing a
+                                    : REM character
 
- XOS_Write0 = &20002                \ The operating system call for printing a
-                                    \ null-terminated string
+ XOS_Write0 = &20002                : REM The operating system call for printing a
+                                    : REM null-terminated string
 
- XOS_Newline = &20003               \ The operating system call for printing a
-                                    \ newline
+ XOS_Newline = &20003               : REM The operating system call for printing a
+                                    : REM newline
 
- XOS_Module = &2001E                \ The operating system call for claiming
-                                    \ workspace for a module
+ XOS_Module = &2001E                : REM The operating system call for claiming
+                                    : REM workspace for a module
 
- XOS_EvaluateExpression = &2002D    \ The operating system call to convert a
-                                    \ string into a number
+ XOS_EvaluateExpression = &2002D    : REM The operating system call to convert a
+                                    : REM string into a number
 
- XOS_ValidateAddress = &2003A       \ The operating system call to check whether
-                                    \ an address range is in logical RAM
+ XOS_ValidateAddress = &2003A       : REM The operating system call to check whether
+                                    : REM an address range is in logical RAM
 
- XOS_CallEvery = &2003C             \ The operating system call to call a
-                                    \ routine regularly
+ XOS_CallEvery = &2003C             : REM The operating system call to call a
+                                    : REM routine regularly
 
- XOS_RemoveTickerEvent = &2003D     \ The operating system call to remove a call
-                                    \ set up by OS_CallEvery
+ XOS_RemoveTickerEvent = &2003D     : REM The operating system call to remove a call
+                                    : REM set up by OS_CallEvery
 
- XOS_ConvertCardinal1 = &200D5      \ The operating system call for printing an
-                                    \ unsigned integer byte
+ XOS_ConvertCardinal1 = &200D5      : REM The operating system call for printing an
+                                    : REM unsigned integer byte
 
- XOS_ConvertCardinal4 = &200D8      \ The operating system call for printing an
-                                    \ unsigned integer word
+ XOS_ConvertCardinal4 = &200D8      : REM The operating system call for printing an
+                                    : REM unsigned integer word
 
- XOS_WriteI = &20100                \ The operating system call for printing the
-                                    \ character specified in the SWI number
+ XOS_WriteI = &20100                : REM The operating system call for printing the
+                                    : REM character specified in the SWI number
 
- XEconet_StartTransmit = &60006     \ The operating system call to create a
-                                    \ Transmit Control Block and start a
-                                    \ transmission over Econet
+ XEconet_StartTransmit = &60006     : REM The operating system call to create a
+                                    : REM Transmit Control Block and start a
+                                    : REM transmission over Econet
 
- XEconet_AbandonTransmit = &60008   \ The operating system call to abandon a
-                                    \ Transmit Control Block and reclaim the
-                                    \ memory
+ XEconet_AbandonTransmit = &60008   : REM The operating system call to abandon a
+                                    : REM Transmit Control Block and reclaim the
+                                    : REM memory
 
- XEconet_ReadStationNumber = &6000F \ The operating system call to convert a
-                                    \ string into a network and station number
+ XEconet_ReadStationNumber = &6000F : REM The operating system call to convert a
+                                    : REM string into a network and station number
 
-\ ******************************************************************************
-\
-\ Econet variables
-\
-\ ******************************************************************************
+REM ******************************************************************************
+REM
+REM Econet variables
+REM
+REM ******************************************************************************
 
- startWorkspace = &00               \ The start of the workspace
+ startWorkspace = &00               : REM The start of the workspace
 
-                                    \ R12 typically contains the address of the
-                                    \ module's private workspace, so each of the
-                                    \ variables in the workspace can be referred
-                                    \ to as:
-                                    \
-                                    \   [R12, #offset]
-                                    \
-                                    \ where #offset is one of the following
-                                    \ variables
+                                    : REM R12 typically contains the address of the
+                                    : REM module's private workspace, so each of the
+                                    : REM variables in the workspace can be referred
+                                    : REM to as;
+                                    : REM
+                                    : REM   [R12, #offset]
+                                    : REM
+                                    : REM where #offset is one of the following
+                                    : REM variables
 
- scorePort = &00                    \ The Econet port on which to talk to the
-                                    \ scoreboard machine
-                                    \
-                                    \ If this is zero, the network is disabled
-                                    \ and no commander data is transmitted
+ scorePort = &00                    : REM The Econet port on which to talk to the
+                                    : REM scoreboard machine
+                                    : REM
+                                    : REM If this is zero, the network is disabled
+                                    : REM and no commander data is transmitted
 
- scoreStation = &04                 \ The station number of the scoreboard
-                                    \ machine
+ scoreStation = &04                 : REM The station number of the scoreboard
+                                    : REM machine
 
- scoreNetwork = &08                 \ The network number of the scoreboard
-                                    \ machine
+ scoreNetwork = &08                 : REM The network number of the scoreboard
+                                    : REM machine
 
- currentRank = &0C                  \ The current commander rank, so we can
-                                    \ track it
+ currentRank = &0C                  : REM The current commander rank, so we can
+                                    : REM track it
 
- netTally = &10                     \ Stores a one-point-per-kill combat score
-                                    \ for the scoreboard (so all platforms have
-                                    \ the same point system)
+ netTally = &10                     : REM Stores a one-point-per-kill combat score
+                                    : REM for the scoreboard [so all platforms have
+                                    : REM the same point system]
 
- netDeaths = &14                    \ Counts the number of deaths
+ netDeaths = &14                    : REM Counts the number of deaths
 
- econetHandle = &18                 \ The handle of the last packet transmission
+ econetHandle = &18                 : REM The handle of the last packet transmission
 
- semaphore = &1C                    \ A flag to stop us from starting a new
-                                    \ transmission before we have finished the
-                                    \ current one
+ semaphore = &1C                    : REM A flag to stop us from starting a new
+                                    : REM transmission before we have finished the
+                                    : REM current one
 
- transmitBuffer = &20               \ The tramsmit buffer
+ transmitBuffer = &20               : REM The tramsmit buffer
 
- trName = &20                       \ Bytes #0-7 = commander's name, terminated
-                                    \ by a carriage return
+ trName = &20                       : REM Bytes #0-7 = commander's name, terminated
+                                    : REM by a carriage return
 
- trLegal = &28                      \ Byte #8 = commander's legal status:
-                                    \
-                                    \   * 0 = Clean
-                                    \   * 1 = Offender
-                                    \   * 2 = Fugitive
+ trLegal = &28                      : REM Byte #8 = commander's legal status;
+                                    : REM
+                                    : REM   * 0 = Clean
+                                    : REM   * 1 = Offender
+                                    : REM   * 2 = Fugitive
 
- trCondition = &29                  \ Byte #9 = commander's status condition:
-                                    \
-                                    \   * 0 = Docked
-                                    \   * 1 = Green
-                                    \   * 2 = Yellow
-                                    \   * 3 = Red
+ trCondition = &29                  : REM Byte #9 = commander's status condition;
+                                    : REM
+                                    : REM   * 0 = Docked
+                                    : REM   * 1 = Green
+                                    : REM   * 2 = Yellow
+                                    : REM   * 3 = Red
 
- trKill = &2A                       \ Byte #10 = commander's kill count
+ trKill = &2A                       : REM Byte #10 = commander's kill count
 
- trDeaths = &2B                     \ Byte #11 = commander's death count
+ trDeaths = &2B                     : REM Byte #11 = commander's death count
 
- trCredits = &2C                    \ Bytes #12-15 = commander's credits
+ trCredits = &2C                    : REM Bytes #12-15 = commander's credits
 
- trMachine = &30                    \ Byte #16 = machine type:
-                                    \
-                                    \   * 0 = BBC Micro SRAM
-                                    \   * 1 = Master
-                                    \   * 2 = 6502SP
-                                    \   * 3 = BBC Micro standard
-                                    \   * 4 = Archimedes
+ trMachine = &30                    : REM Byte #16 = machine type;
+                                    : REM
+                                    : REM   * 0 = BBC Micro SRAM
+                                    : REM   * 1 = Master
+                                    : REM   * 2 = 6502SP
+                                    : REM   * 3 = BBC Micro standard
+                                    : REM   * 4 = Archimedes
 
- scoreEnabled = &34                 \ Flag to control whether we transmit scores
-                                    \ to the scoreboard
-                                    \
-                                    \   * Zero = do not transmit scores
-                                    \   * Non-zero = do transmit scores
+ scoreEnabled = &34                 : REM Flag to control whether we transmit scores
+                                    : REM to the scoreboard
+                                    : REM
+                                    : REM   * Zero = do not transmit scores
+                                    : REM   * Non-zero = do transmit scores
 
- scoreInterval = &38                \ The interval between score transmissions
-                                    \ in centiseconds
+ scoreInterval = &38                : REM The interval between score transmissions
+                                    : REM in centiseconds
 
- stringBuffer = &3C                 \ String buffer for processing command line
-                                    \ parameters (12 characters)
+ stringBuffer = &3C                 : REM String buffer for processing command line
+                                    : REM parameters [12 characters]
 
- endWorkspace = &48                 \ End of the private workspace
+ endWorkspace = &48                 : REM End of the private workspace
 
- workspaceSize = endWorkspace - startWorkspace  \ The size of the workspace
+ workspaceSize = endWorkspace - startWorkspace  : REM The size of the workspace
 
-\ ******************************************************************************
-\
-\ ELITE OVER ECONET MODULE CODE
-\
-\ Produces the binary file EliteNet.bin.
-\
-\ ******************************************************************************
+REM ******************************************************************************
+REM
+REM ELITE OVER ECONET MODULE CODE
+REM
+REM Produces the binary file EliteNet.
+REM
+REM ******************************************************************************
 
- DIM CODE% &1000                    \ Reserve a block in memory for the
-                                    \ assembled code
+ DIM CODE% &1000                    : REM Reserve a block in memory for the
+                                    : REM assembled code
 
- FOR pass% = 4 TO 6 STEP 2          \ Perform a two-pass assembly, using both
-                                    \ P% and O%, with errors enabled on the
-                                    \ second pass only
+ FOR pass% = 4 TO 6 STEP 2          : REM Perform a two-pass assembly, using both
+                                    : REM P% and O%, with errors enabled on the
+                                    : REM second pass only
 
- O% = CODE%                         \ Assemble the code for deployment to
-                                    \ address O%
+ O% = CODE%                         : REM Assemble the code for deployment to
+                                    : REM address O%
 
- P% = CODE                          \ Assemble the code into the block at P%
+ P% = CODE                          : REM Assemble the code into the block at P%
 
 [                                   \ Switch from BASIC into assembly language
 
@@ -190,10 +190,10 @@
 
 \ ******************************************************************************
 \
-\       Name: Module header
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Relocatable module header
+\       Name; Module header
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Relocatable module header
 \
 \ ******************************************************************************
 
@@ -213,10 +213,10 @@
 
 \ ******************************************************************************
 \
-\       Name: Module title
-\       Type: Variable
-\   Category: Econet
-\    Summary: Relocatable module title string
+\       Name; Module title
+\       Type; Variable
+\   Category; Econet
+\    Summary; Relocatable module title string
 \
 \ ******************************************************************************
 
@@ -224,14 +224,14 @@
 
  EQUS    "EliteOverEconet"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: Module help text
-\       Type: Variable
-\   Category: Econet
-\    Summary: Relocatable module help string
+\       Name; Module help text
+\       Type; Variable
+\   Category; Econet
+\    Summary; Relocatable module help string
 \
 \ ******************************************************************************
 
@@ -241,14 +241,14 @@
  EQUB    9
  EQUS    "0.10 (03 Apr 2025)"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: Module help and command table
-\       Type: Variable
-\   Category: Econet
-\    Summary: Relocatable module help and command table
+\       Name; Module help and command table
+\       Type; Variable
+\   Category; Econet
+\    Summary; Relocatable module help and command table
 \
 \ ******************************************************************************
 
@@ -258,7 +258,7 @@
 
  EQUS    "EliteStatus"              \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteStatus                \ Offset of code from module start
 
@@ -278,7 +278,7 @@
 
  EQUS    "EliteTxStation"           \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxStation             \ Offset of code from module start
 
@@ -298,7 +298,7 @@
 
  EQUS    "EliteTxPort"              \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxPort                \ Offset of code from module start
 
@@ -318,7 +318,7 @@
 
  EQUS    "EliteTxInterval"          \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxInterval            \ Offset of code from module start
 
@@ -338,7 +338,7 @@
 
  EQUS    "EliteTxStart"             \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxStart               \ Offset of code from module start
 
@@ -358,7 +358,7 @@
 
  EQUS    "EliteTxStop"              \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxStop                \ Offset of code from module start
 
@@ -378,7 +378,7 @@
 
  EQUS    "EliteTxReset"             \ String to match, null terminated
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
  EQUD    EliteTxReset               \ Offset of code from module start
 
@@ -398,10 +398,10 @@
 
 \ ******************************************************************************
 \
-\       Name: EliteTxPort
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxPort command
+\       Name; EliteTxPort
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxPort command
 \
 \ ******************************************************************************
 
@@ -438,7 +438,7 @@
  ADR     R0, eliteTxPortError       \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .eliteTxPortError
@@ -446,7 +446,7 @@
  EQUD    0
  EQUS    "Invalid port number (it must be in the range 1 to 254)"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxPortHelp
 
@@ -454,14 +454,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxPort <port>"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteTxStation
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxStation command
+\       Name; EliteTxStation
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxStation command
 \
 \ ******************************************************************************
 
@@ -500,7 +500,7 @@
  ADR     R0, eliteTxStationError    \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .eliteTxStationError
@@ -508,7 +508,7 @@
  EQUD    0
  EQUS    "Invalid station (it must be in the format 123 or 1.234)"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxStationHelp
 
@@ -517,14 +517,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxStation [<network>.]<station>"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteTxInterval
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxInterval command
+\       Name; EliteTxInterval
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxInterval command
 \
 \ ******************************************************************************
 
@@ -557,10 +557,10 @@
 
  ADR     R0, TransmitData           \ Remove the TransmitData routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
+ SWI     XOS_RemoveTickerEvent      \ called [we set R1 to the address of the
                                     \ module's private workspace so it matches
                                     \ the value of R2 that was used when adding
-                                    \ the routine to the ticker list)
+                                    \ the routine to the ticker list]
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  ADR     R1, TransmitData           \ into the ticker event list so it gets
@@ -579,7 +579,7 @@
  ADR     R0, eliteTxIntervalError   \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .eliteTxIntervalError
@@ -587,7 +587,7 @@
  EQUD    0
  EQUS    "Invalid interval (it must be at least 100)"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxIntervalHelp
 
@@ -596,14 +596,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxInterval <interval>"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteTxStop
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxStop command
+\       Name; EliteTxStop
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxStop command
 \
 \ ******************************************************************************
 
@@ -624,10 +624,10 @@
 
  ADR     R0, TransmitData           \ Remove the TransmitData routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
+ SWI     XOS_RemoveTickerEvent      \ called [we set R1 to the address of the
                                     \ module's private workspace so it matches
                                     \ the value of R2 that was used when adding
-                                    \ the routine to the ticker list)
+                                    \ the routine to the ticker list]
 
  MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
 
@@ -638,7 +638,7 @@
  ADR     R0, eliteTxStopError       \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .eliteTxStopError
@@ -646,7 +646,7 @@
  EQUD    0
  EQUS    "Transmissions are already disabled"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxStopHelp
 
@@ -654,14 +654,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxStop"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteTxStart
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxStart command
+\       Name; EliteTxStart
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxStart command
 \
 \ ******************************************************************************
 
@@ -703,7 +703,7 @@
  ADR     R0, eliteTxStartError1     \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .star2
@@ -711,7 +711,7 @@
  ADR     R0, eliteTxStartError2     \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
+ ORR     R14, R14, #1<<28           \ set [in bit 28 of the program counter]
  MOVS    PC, R14
 
 .eliteTxStartError1
@@ -719,7 +719,7 @@
  EQUD    0
  EQUS    "Transmissions are already enabled"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxStartError2
 
@@ -727,7 +727,7 @@
  EQUS    "Both the port and station number must be "
  EQUS    "non-zero to enable transmissions"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteTxStartHelp
 
@@ -735,14 +735,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxStart"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteTxReset
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteTxReset command
+\       Name; EliteTxReset
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxReset command
 \
 \ ******************************************************************************
 
@@ -765,14 +765,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteTxReset"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: EliteStatus
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Implement the EliteStatus command
+\       Name; EliteStatus
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteStatus command
 \
 \ ******************************************************************************
 
@@ -800,25 +800,25 @@
 
  SWI     XOS_Newline                \ Print a newline
 
- ADR     R0, statusInterval1        \ Print "Transmit interval:  "
+ ADR     R0, statusInterval1        \ Print 'Transmit interval;  '
  SWI     XOS_Write0
 
  LDR     R0, [R12, #scoreInterval]  \ Print the score interval as a positive
- ADD     R1, R12, #stringBuffer     \ integer (32-bit)
+ ADD     R1, R12, #stringBuffer     \ integer [32-bit]
  MOV     R2, #12
  SWI     XOS_ConvertCardinal4
  SWI     XOS_Write0
 
- ADR     R0, statusInterval2        \ Print " centiseconds"
+ ADR     R0, statusInterval2        \ Print ' centiseconds'
  SWI     XOS_Write0
 
  SWI     XOS_Newline                \ Print a newline
 
- ADR     R0, statusStation          \ Print "Scoreboard station: "
+ ADR     R0, statusStation          \ Print 'Scoreboard station; '
  SWI     XOS_Write0
 
  LDR     R0, [R12, #scoreNetwork]   \ Print the network number as a positive
- ADD     R1, R12, #stringBuffer     \ integer (8-bit)
+ ADD     R1, R12, #stringBuffer     \ integer [8-bit]
  MOV     R2, #12
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
@@ -834,28 +834,28 @@
  SWILT   XOS_WriteI+&30
 
  ADD     R1, R12, #stringBuffer     \ Print the station number as a positive
- MOV     R2, #12                    \ integer (8-bit)
+ MOV     R2, #12                    \ integer [8-bit]
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
 
  SWI     XOS_Newline                \ Print a newline
 
- ADR     R0, statusPort             \ Print "Scoreboard port:    "
+ ADR     R0, statusPort             \ Print 'Scoreboard port;    '
  SWI     XOS_Write0
 
  LDR     R0, [R12, #scorePort]      \ Print the port number as a positive
- ADD     R1, R12, #stringBuffer     \ integer (8-bit)
+ ADD     R1, R12, #stringBuffer     \ integer [8-bit]
  MOV     R2, #12
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
 
  SWI     XOS_Newline                \ Print a newline
 
- ADR     R0, statusKills            \ Print "Kills/deaths:       "
+ ADR     R0, statusKills            \ Print 'Kills/deaths;       '
  SWI     XOS_Write0
 
  LDR     R0, [R12, #netTally]       \ Print the kill tally as a positive
- ADD     R1, R12, #stringBuffer     \ integer (8-bit)
+ ADD     R1, R12, #stringBuffer     \ integer [8-bit]
  MOV     R2, #12
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
@@ -864,7 +864,7 @@
  SWI     XOS_WriteC
 
  LDR     R0, [R12, #netDeaths]      \ Print the death count as a positive
- ADD     R1, R12, #stringBuffer     \ integer (8-bit)
+ ADD     R1, R12, #stringBuffer     \ integer [8-bit]
  MOV     R2, #12
  SWI     XOS_ConvertCardinal1
  SWI     XOS_Write0
@@ -879,49 +879,49 @@
 
  EQUS    "Current status of Elite over Econet:"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusEnabled
 
  EQUS    "Transmissions:      Enabled"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusDisabled
 
  EQUS    "Transmissions:      Disabled"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusInterval1
 
  EQUS    "Transmit interval:  "
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusInterval2
 
  EQUS    " centiseconds"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusStation
 
  EQUS    "Scoreboard station: "
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusPort
 
  EQUS    "Scoreboard port:    "
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .statusKills
 
  EQUS    "Kills/deaths:       "
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 .eliteStatusHelp
 
@@ -929,14 +929,14 @@
  EQUB    13
  EQUS    "Syntax: *EliteStatus"
  EQUB    0
- ALIGN
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \
-\       Name: InitialiseModule
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Initialise the module
+\       Name; InitialiseModule
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Initialise the module
 \
 \ ******************************************************************************
 
@@ -987,14 +987,14 @@
                                     \ game
 
  MOV     R1, #1500                  \ Initialise the transmission interval to
- STR     R1, [R2, #scoreInterval]   \ 1500 centiseconds (i.e. 15 seconds)
+ STR     R1, [R2, #scoreInterval]   \ 1500 centiseconds [i.e. 15 seconds]
 
 .init1
 
  MOV     R0, #50                    \ Add a call to the MonitorRank routine
  ADR     R1, MonitorRank            \ into the ticker event list so it gets
- SWI     XOS_CallEvery              \ called twice each second (i.e. every 50
-                                    \ centiseconds), to check the commander's
+ SWI     XOS_CallEvery              \ called twice each second [i.e. every 50
+                                    \ centiseconds], to check the commander's
                                     \ rank for changes
                                     \
                                     \ Note that R2 contains the address of the
@@ -1006,10 +1006,10 @@
 
 \ ******************************************************************************
 \
-\       Name: FinaliseModule
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Finalise the module
+\       Name; FinaliseModule
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Finalise the module
 \
 \ ******************************************************************************
 
@@ -1022,10 +1022,10 @@
 
  ADR     R0, TransmitData           \ Remove the TransmitData routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
+ SWI     XOS_RemoveTickerEvent      \ called [we set R1 to the address of the
                                     \ module's private workspace so it matches
                                     \ the value of R2 that was used when adding
-                                    \ the routine to the ticker list)
+                                    \ the routine to the ticker list]
 
  ADR     R0, MonitorRank            \ Remove the MonitorRank routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
@@ -1044,10 +1044,10 @@
 
 \ ******************************************************************************
 \
-\       Name: TransmitData
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Create and send an Econet data packet
+\       Name; TransmitData
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Create and send an Econet data packet
 \
 \ ******************************************************************************
 
@@ -1075,7 +1075,7 @@
  TEQP    R4, #3                     \ Switch to SVC mode
  MOV     R0, R0
 
- STMFD   R13!, {R5, R14}            \ Store the original processor mode (in R5)
+ STMFD   R13!, {R5, R14}            \ Store the original processor mode [in R5]
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
@@ -1156,7 +1156,7 @@
  ORR     R2, R2, #&0D000000
  STR     R2, [R12, #trName+4]
 
- MOV     R3, #1                     \ Set R3 to 1 (for Offender)
+ MOV     R3, #1                     \ Set R3 to 1 [for Offender]
 
  LDR     R0, cmdrLegal              \ Check to see if the commander's legal
  MOV     R1, R0                     \ status is in logical RAM
@@ -1166,11 +1166,11 @@
 
  LDR     R2, [R0]                   \ Set R2 to the commander's legal status
 
- CMP     R2, #&28                   \ If R2 <= &28 then set R3 to 0 (for Clean)
+ CMP     R2, #&28                   \ If R2 <= &28 then set R3 to 0 [for Clean]
  MOVLE   R3, #0
 
- CMP     R2, #&3E8                  \ If R2 > &3E8 then set R3 to 3 (for
- MOVGT   R3, #3                     \ Fugitive)
+ CMP     R2, #&3E8                  \ If R2 > &3E8 then set R3 to 3 [for
+ MOVGT   R3, #3                     \ Fugitive]
 
  STRB    R3, [R12, #trLegal]        \ Set byte #8 to the legal status
 
@@ -1185,7 +1185,7 @@
                                     \ 4 = Hyperspace, 5 = Witchspace, 6 = Docked
 
  CMP     R2, #4                     \ If condition is Hyperspace or Witchspace,
- CMPNE   R2, #5                     \ set R2 = 3 (for Red)
+ CMPNE   R2, #5                     \ set R2 = 3 [for Red]
  MOVEQ   R2, #3
 
  CMP     R2, #6                     \ If condition is Docked, set R2 = 0
@@ -1268,10 +1268,10 @@
 
 \ ******************************************************************************
 \
-\       Name: MonitorRank
-\       Type: Subroutine
-\   Category: Econet
-\    Summary: Check the commander's rank and increase the net tally if it has
+\       Name; MonitorRank
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Check the commander's rank and increase the net tally if it has
 \             increased since last time
 \
 \ ******************************************************************************
@@ -1300,7 +1300,7 @@
  TEQP    R4, #3                     \ Switch to SVC mode
  MOV     R0, R0
 
- STMFD   R13!, {R5, R14}            \ Store the original processor mode (in R5)
+ STMFD   R13!, {R5, R14}            \ Store the original processor mode [in R5]
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
@@ -1374,10 +1374,10 @@
 
 \ ******************************************************************************
 \
-\       Name: Archimedes Elite addresses (version 1.14)
-\       Type: Workspace
-\   Category: Econet
-\    Summary: Addresses for the commander data and version strings in Elite
+\       Name; Archimedes Elite addresses [version 1.14]
+\       Type; Workspace
+\   Category; Econet
+\    Summary; Addresses for the commander data and version strings in Elite
 \
 \ ******************************************************************************
 
@@ -1407,7 +1407,7 @@
 
 .string1Match
 
- EQUD    &4E495247                  \ GRIN (part of "CLIVE GRINGRAS")
+ EQUD    &4E495247                  \ GRIN [part of 'CLIVE GRINGRAS']
 
 .string2Addr
 
@@ -1415,7 +1415,7 @@
 
 .string2Match
 
- EQUD    &45525241                  \ ARRE (part of "WARREN BURCH")
+ EQUD    &45525241                  \ ARRE [part of 'WARREN BURCH']
 
 .string3Addr
 
@@ -1423,7 +1423,7 @@
 
 .string3Match
 
- EQUD    &34312E31                  \ 1.14 (part of "Version 1.14")
+ EQUD    &34312E31                  \ 1.14 [part of 'Version 1.14']
 
 \ ******************************************************************************
 \
@@ -1433,12 +1433,26 @@
 
 ]
 
- NEXT pass%                         \ Loop back for the second pass
+ NEXT pass%                         : REM Loop back for the second pass
 
-\ ******************************************************************************
-\
-\ Save EliteNet.bin
-\
-\ ******************************************************************************
+REM ******************************************************************************
+REM
+REM Save EliteNet
+REM
+REM ******************************************************************************
 
- OSCLI "SAVE EliteNet.bin "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
+ OSCLI "SAVE EliteNet "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
+
+ END
+
+ DEF FN_AlignWithZeroes
+  a = P% AND 3
+  IF a > 0 THEN
+   FOR I% = 1 TO 4 - a
+    [
+     OPT pass%
+     EQUB 0
+    ]
+   NEXT I%
+  ENDIF
+ =pass%
