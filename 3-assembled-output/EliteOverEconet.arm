@@ -13,6 +13,9 @@
 .set XEconet_StartTransmit, 0x60006
 .set XEconet_AbandonTransmit, 0x60008
 .set XEconet_ReadStationNumber, 0x6000F
+.set XMessageTrans_ErrorLookup, 0x60516
+.set XElite_GameOver, 0xE0CC0
+.set XElite_GameRestart, 0xE0CC1
 .set startWorkspace, 0x00
 .set scorePort, 0x00
 .set scoreStation, 0x04
@@ -33,7 +36,9 @@
 .set scoreEnabled, 0x34
 .set scoreInterval, 0x38
 .set stringBuffer, 0x3C
-.set endWorkspace, 0x48
+.set gameIsOver, 0x48
+.set patchApplied, 0x4C
+.set endWorkspace, 0x50
 .set workspaceSize, endWorkspace - startWorkspace
 .org CODE
 .long    0
@@ -43,6 +48,10 @@
 .long    title
 .long    help
 .long    helpAndCommandTable
+.long    0xC0CC0
+.long    SWIHandler
+.long    swiDecodingTable
+.long    0
 title:
 .byte    "EliteOverEconet"
 .byte    0
@@ -50,7 +59,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "0.10 (03 Apr 2025)"
+.byte    "0.10 (04 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -132,7 +141,7 @@ EliteTxPort:
  MOV     R2, #12
  SWI     XOS_EvaluateExpression
  BVS     port1
- TST     R1, #0
+ TEQ     R1, #0
  BNE     port1
  CMP     R2, #1
  BLT     port1
@@ -144,8 +153,7 @@ EliteTxPort:
 port1:
  ADR     R0, eliteTxPortError
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 eliteTxPortError:
 .long    0
 .byte    "Invalid port number (it must be in the range 1 to 254)"
@@ -175,8 +183,7 @@ stat1:
 stat2:
  ADR     R0, eliteTxStationError
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 eliteTxStationError:
 .long    0
 .byte    "Invalid station (it must be in the format 123 or 1.234)"
@@ -217,8 +224,7 @@ intv1:
 intv2:
  ADR     R0, eliteTxIntervalError
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 eliteTxIntervalError:
 .long    0
 .byte    "Invalid interval (it must be at least 100)"
@@ -247,8 +253,7 @@ EliteTxStop:
 stop1:
  ADR     R0, eliteTxStopError
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 eliteTxStopError:
 .long    0
 .byte    "Transmissions are already disabled"
@@ -272,7 +277,7 @@ EliteTxStart:
  TEQNE   R2, #0
  BEQ     star2
  MOV     R0, #1
- STR     R2, [R12, #scoreEnabled]
+ STR     R0, [R12, #scoreEnabled]
  LDR     R0, [R12, #scoreInterval]
  ADR     R1, TransmitData
  MOV     R2, R12
@@ -282,13 +287,11 @@ EliteTxStart:
 star1:
  ADR     R0, eliteTxStartError1
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 star2:
  ADR     R0, eliteTxStartError2
  LDMFD   R13!, {R14}
- ORR     R14, R14, #1<<28
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28
 eliteTxStartError1:
 .long    0
 .byte    "Transmissions are already enabled"
@@ -425,6 +428,52 @@ eliteStatusHelp:
 .byte    "Syntax: *EliteStatus"
 .byte    0
 .balign 4
+SWIHandler:
+ LDR     R12, [R12]
+ CMP     R11, #2 * 4
+ ADDLO   PC, PC, R11, LSL #2
+ B       UnknownSWIError
+jump:
+ B       SWI_Elite_GameOver
+ B       SWI_Elite_GameRestart
+UnknownSWIError:
+ ADR     R0, swiError
+ MOV     R1, #0
+ MOV     R2, #0
+ ADR     R4, title
+ SWI     XMessageTrans_ErrorLookup
+ ORRS    PC, R14, #1<<28
+swiError:
+.long    0x1E6
+.byte    "BadSWI"
+.byte    0
+.balign 4
+swiDecodingTable:
+.byte    "Elite"
+.byte    0
+.byte    "GameOver"
+.byte    0
+.byte    "GameRestart"
+.byte    0
+.byte    0
+.balign 4
+SWI_Elite_GameOver:
+ MOV     R0, #1
+ STR     R0, [R12, #gameIsOver]
+ MOV     R0, #0x29
+ MOVS    PC, R14
+SWI_Elite_GameRestart:
+ LDR     R2, [R12, #gameIsOver]
+ TEQ     R2, #0
+ BEQ     notDeath
+ LDR     R2, [R12, #netDeaths]
+ ADD     R2, R2, #1
+ STR     R2, [R12, #netDeaths]
+ MOV     R2, #0
+ STR     R2, [R12, #gameIsOver]
+notDeath:
+ MOV     R2, #0x12C
+ MOVS    PC, R14
 InitialiseModule:
  STMFD   R13!, {R14}
  LDR     R2, [R12]
@@ -439,13 +488,15 @@ InitialiseModule:
  STR     R1, [R2, #econetHandle]
  STR     R1, [R2, #netTally]
  STR     R1, [R2, #netDeaths]
+ STR     R1, [R2, #gameIsOver]
+ STR     R1, [R2, #patchApplied]
  STR     R1, [R2, #scoreNetwork]
  STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
  STR     R1, [R2, #scoreEnabled]
  MVN     R1, #0
  STR     R1, [R2, #currentRank]
- MOV     R1, #1500
+ MOV     R1, #1000
  STR     R1, [R2, #scoreInterval]
 init1:
  MOV     R0, #50
@@ -503,7 +554,7 @@ TransmitData:
  BNE     skipT
  LDR     R0, [R12, #semaphore]
  TEQ     R0, #0
- BNE     returnT
+ BNE     doneT
  MOV     R0, #1
  STR     R0, [R12, #semaphore]
  LDR     R0, [R12, #econetHandle]
@@ -589,7 +640,7 @@ TransmitData:
 skipT:
  MOV     R0, #0
  STR     R0, [R12, #semaphore]
-returnT:
+doneT:
  LDMFD   R13!, {R5, R14}
  TEQP    R5, #0
  MOV     R0, R0
@@ -629,6 +680,26 @@ MonitorRank:
  LDR     R1, string3Match
  CMP     R0, R1
  BNE     skipM
+ LDR     R1, [R12, #patchApplied]
+ TEQ     R1, #1
+ BEQ     skipP
+ LDR     R0, gameOverAddr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     skipP
+ BCS     skipP
+ LDR     R1, gameOverPatch
+ STR     R1, [R0]
+ LDR     R0, restartAddr
+ MOV     R1, R0
+ SWI     XOS_ValidateAddress
+ BVS     skipP
+ BCS     skipP
+ LDR     R1, restartPatch
+ STR     R1, [R0]
+ MOV     R1, #1
+ STR     R1, [R12, #patchApplied]
+skipP:
  LDR     R0, cmdrRank
  MOV     R1, R0
  SWI     XOS_ValidateAddress
@@ -671,3 +742,11 @@ string3Addr:
 .long    0x00071508
 string3Match:
 .long    0x34312E31
+gameOverAddr:
+.long    0x0000BBD0
+gameOverPatch:
+ SWI     XElite_GameOver
+restartAddr:
+.long    0x0001AF24
+restartPatch:
+ SWI     XElite_GameRestart

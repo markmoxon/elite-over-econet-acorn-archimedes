@@ -71,6 +71,16 @@
  XEconet_ReadStationNumber = &6000F \ The operating system call to convert a
                                     \ string into a network and station number
 
+ XMessageTrans_ErrorLookup = &60516 \ The operating system call to expand tokens
+                                    \ in an error string
+
+ XElite_GameOver = &E0CC0           \ The SWI call to inject when the game
+                                    \ prints the GAME OVER string
+
+ XElite_GameRestart = &E0CC1        \ The SWI call to inject when the game
+                                    \ prints the copyright message on the title
+                                    \ screen
+
 \ ******************************************************************************
 \
 \ Econet variables
@@ -160,7 +170,13 @@
  stringBuffer = &3C                 \ String buffer for processing command line
                                     \ parameters (12 characters)
 
- endWorkspace = &48                 \ End of the private workspace
+ gameIsOver = &48                   \ A flag to determine whether the game is in
+                                    \ the process of ending
+
+ patchApplied = &4C                 \ A flag to determine whether the game over
+                                    \ patch has been applied
+
+ endWorkspace = &50                 \ End of the private workspace
 
  workspaceSize = endWorkspace - startWorkspace  \ The size of the workspace
 
@@ -211,6 +227,14 @@
 
  EQUD    helpAndCommandTable        \ Offset to help and command keyword table
 
+ EQUD    &C0CC0                     \ SWI chunk base number
+
+ EQUD    SWIHandler                 \ Offset to SWI handler code
+
+ EQUD    swiDecodingTable           \ Offset to SWI decoding table
+
+ EQUD    0                          \ Offset to SWI decoding code
+
 \ ******************************************************************************
 \
 \       Name: Module title
@@ -239,7 +263,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "0.10 (03 Apr 2025)"
+ EQUS    "0.10 (04 Apr 2025)"
  EQUB    0
  ALIGN
 
@@ -419,7 +443,7 @@
  BVS     port1                      \ Report an error if the conversion went
                                     \ wrong
 
- TST     R1, #0                     \ Report an error if the result is not an
+ TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     port1                      \ integer
 
  CMP     R2, #1                     \ Report an error if the port number is not
@@ -438,8 +462,7 @@
  ADR     R0, eliteTxPortError       \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .eliteTxPortError
 
@@ -500,8 +523,7 @@
  ADR     R0, eliteTxStationError    \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .eliteTxStationError
 
@@ -579,8 +601,7 @@
  ADR     R0, eliteTxIntervalError   \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .eliteTxIntervalError
 
@@ -638,8 +659,7 @@
  ADR     R0, eliteTxStopError       \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .eliteTxStopError
 
@@ -686,7 +706,7 @@
                                     \ to report this and prevent startup
 
  MOV     R0, #1                     \ Set scoreEnabled = 1 to denote that score
- STR     R2, [R12, #scoreEnabled]   \ transmissions are enabled
+ STR     R0, [R12, #scoreEnabled]   \ transmissions are enabled
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  ADR     R1, TransmitData           \ into the ticker event list so it gets
@@ -703,16 +723,14 @@
  ADR     R0, eliteTxStartError1     \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .star2
 
  ADR     R0, eliteTxStartError2     \ Set R0 to point to the error message
 
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
- ORR     R14, R14, #1<<28           \ set (in bit 28 of the program counter)
- MOVS    PC, R14
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
 .eliteTxStartError1
 
@@ -933,6 +951,123 @@
 
 \ ******************************************************************************
 \
+\       Name: SWIHandler
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Handle SWI calls to the module
+\
+\ ******************************************************************************
+
+.SWIHandler
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ CMP     R11, #2 * 4                \ Jump to the correct SWI, if R11 is in
+ ADDLO   PC, PC, R11, LSL #2        \ the correct range (i.e. the number of
+                                    \ SWIs in the jump table * 4)
+
+ B       UnknownSWIError            \ R11 is out of range, so return an error
+
+.jump
+
+ B       SWI_Elite_GameOver         \ Jump to SWI 0 within this chunk
+
+ B       SWI_Elite_GameRestart      \ Jump to SWI 1 within this chunk
+
+.UnknownSWIError
+
+ ADR     R0, swiError               \ Transform the error message token in
+ MOV     R1, #0                     \ swiError
+ MOV     R2, #0
+ ADR     R4, title
+ SWI     XMessageTrans_ErrorLookup
+
+ ORRS    PC, R14, #1<<28            \ Return from the subroutine with the V flag
+                                    \ set (in bit 28 of the program counter)
+
+.swiError
+
+ EQUD    &1E6
+ EQUS    "BadSWI"
+ EQUB    0
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: swiDecodingTable
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Decoding table for the Elite_GameOver and Elite_GameRestart SWIs
+\
+\ ******************************************************************************
+
+.swiDecodingTable
+
+ EQUS    "Elite"                    \ Group prefix
+ EQUB    0
+
+ EQUS    "GameOver"                 \ SWI Elite_GameOver (&C0CC0)
+ EQUB    0
+
+ EQUS    "GameRestart"              \ SWI Elite_GameRestart (&C0CC1)
+ EQUB    0
+
+ EQUB    0                          \ End of table
+ ALIGN
+
+\ ******************************************************************************
+\
+\       Name: SWI_Elite_GameOver
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Code for the Elite_GameOver SWI
+\
+\ ******************************************************************************
+
+.SWI_Elite_GameOver
+
+ MOV     R0, #1                     \ Set the gameIsOver flag to 1 to denote
+ STR     R0, [R12, #gameIsOver]     \ that the game is in the process of ending
+
+ MOV     R0, #&29                   \ Run the original code that we replaced
+
+ MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name: SWI_Elite_GameRestart
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Code for the Elite_GameRestart SWI
+\
+\ ******************************************************************************
+
+.SWI_Elite_GameRestart
+
+ LDR     R2, [R12, #gameIsOver]     \ If gameIsOver is zero then the game is not
+ TEQ     R2, #0                     \ in the process of ending, which means we
+ BEQ     notDeath                   \ are not printing the copyright message on
+                                    \ the title screen following a death, so
+                                    \ jump to notDeath to return from the
+                                    \ subroutine
+
+ LDR     R2, [R12, #netDeaths]      \ Otherwise this is the title screen
+ ADD     R2, R2, #1                 \ following a death, so increment the death
+ STR     R2, [R12, #netDeaths]      \ count
+
+ MOV     R2, #0                     \ Zero the gameIsOver flag to denote that
+ STR     R2, [R12, #gameIsOver]     \ the game is no longer in the process of
+                                    \ ending
+
+.notDeath
+
+ MOV     R2, #&12C                  \ Run the original code that we replaced
+
+ MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name: InitialiseModule
 \       Type: Subroutine
 \   Category: Econet
@@ -975,6 +1110,13 @@
 
  STR     R1, [R2, #netDeaths]       \ Zero the death count
 
+ STR     R1, [R2, #gameIsOver]      \ Zero the gameIsOver flag to denote that
+                                    \ the game is not in the process of ending
+
+ STR     R1, [R2, #patchApplied]    \ Zero the patchApplied flag to denote that
+                                    \ the game over patch has not yet been
+                                    \ applied
+
  STR     R1, [R2, #scoreNetwork]    \ Zero the scoreboard network details
  STR     R1, [R2, #scoreStation]
  STR     R1, [R2, #scorePort]
@@ -986,8 +1128,8 @@
                                     \ that we haven't yet fetched it from the
                                     \ game
 
- MOV     R1, #1500                  \ Initialise the transmission interval to
- STR     R1, [R2, #scoreInterval]   \ 1500 centiseconds (i.e. 15 seconds)
+ MOV     R1, #1000                  \ Initialise the transmission interval to
+ STR     R1, [R2, #scoreInterval]   \ 1000 centiseconds (i.e. 10 seconds)
 
 .init1
 
@@ -1112,9 +1254,11 @@
  CMP     R0, R1                     \ Elite is not paged in
  BNE     skipT
 
+                                    \ If we get here then Elite is paged in
+
  LDR     R0, [R12, #semaphore]      \ If the semaphore flag is non-zero then we
  TEQ     R0, #0                     \ are already running this routine from a
- BNE     returnT                    \ previous ticker event, so jump to returnT
+ BNE     doneT                      \ previous ticker event, so jump to doneT
                                     \ to return from the subroutine without
                                     \ resetting the semaphore
 
@@ -1252,7 +1396,7 @@
  MOV     R0, #0                     \ Set the semaphore flag to zero to indicate
  STR     R0, [R12, #semaphore]      \ that we have finished this transmission
 
-.returnT
+.doneT
 
  LDMFD   R13!, {R5, R14}            \ Restore R14_svc and R5 from the stack, so
                                     \ the latter contains the original processor
@@ -1336,6 +1480,34 @@
  LDR     R1, string3Match           \ to skipM to return from the subroutine as
  CMP     R0, R1                     \ Elite is not paged in
  BNE     skipM
+
+                                    \ If we get here then Elite is paged in
+
+ LDR     R1, [R12, #patchApplied]   \ Set R1 to the patchApplied flag
+
+ TEQ     R1, #1                     \ If R1 = 1 then we have already applied the
+ BEQ     skipP                      \ patch, so skip the following
+
+ LDR     R0, gameOverAddr           \ Deploy the first GAME OVER patch if the
+ MOV     R1, R0                     \ address is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     skipP
+ BCS     skipP
+ LDR     R1, gameOverPatch
+ STR     R1, [R0]
+
+ LDR     R0, restartAddr            \ Deploy the second GAME OVER patch if the
+ MOV     R1, R0                     \ address is in logical RAM
+ SWI     XOS_ValidateAddress
+ BVS     skipP
+ BCS     skipP
+ LDR     R1, restartPatch
+ STR     R1, [R0]
+
+ MOV     R1, #1                     \ Set the patchApplied flag to 1 to denote
+ STR     R1, [R12, #patchApplied]   \ that the game over patch has been applied
+
+.skipP
 
  LDR     R0, cmdrRank               \ Check to see if the commander's rank is in
  MOV     R1, R0                     \ logical RAM
@@ -1424,6 +1596,22 @@
 .string3Match
 
  EQUD    &34312E31                  \ 1.14 (part of "Version 1.14")
+
+.gameOverAddr
+
+ EQUD    &0000BBD0
+
+.gameOverPatch
+
+ SWI     XElite_GameOver            \ Replaces MOV R0, #&29
+
+.restartAddr
+
+ EQUD    &0001AF24
+
+.restartPatch
+
+ SWI     XElite_GameRestart         \ Replaces MOV R2, #&12C
 
 \ ******************************************************************************
 \
