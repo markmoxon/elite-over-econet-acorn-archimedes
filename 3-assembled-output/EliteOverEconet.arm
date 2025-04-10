@@ -203,7 +203,7 @@ EliteTxInterval:
  MOV     R2, #12
  SWI     XOS_EvaluateExpression
  BVS     intv2
- TST     R1, #0
+ TEQ     R1, #0
  BNE     intv2
  CMP     R2, #100
  BLT     intv2
@@ -686,15 +686,15 @@ MonitorRank:
  LDR     R0, gameOverAddr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     skipP
- BCS     skipP
+ BVS     skipM
+ BCS     skipM
  LDR     R1, gameOverPatch
  STR     R1, [R0]
  LDR     R0, restartAddr
  MOV     R1, R0
  SWI     XOS_ValidateAddress
- BVS     skipP
- BCS     skipP
+ BVS     skipM
+ BCS     skipM
  LDR     R1, restartPatch
  STR     R1, [R0]
  MOV     R1, #1

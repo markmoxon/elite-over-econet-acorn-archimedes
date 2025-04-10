@@ -564,7 +564,7 @@
  BVS     intv2                      \ Report an error if the conversion went
                                     \ wrong
 
- TST     R1, #0                     \ Report an error if the result is not an
+ TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     intv2                      \ integer
 
  CMP     R2, #100                   \ Report an error if the interval is < 100
@@ -1123,9 +1123,8 @@
 
  STR     R1, [R2, #scoreEnabled]    \ Disable transmissions by default
 
- MVN     R1, #0
- STR     R1, [R2, #currentRank]     \ Set the current rank to -1, to indicate
-                                    \ that we haven't yet fetched it from the
+ MVN     R1, #0                     \ Set the current rank to -1, to indicate
+ STR     R1, [R2, #currentRank]     \ that we haven't yet fetched it from the
                                     \ game
 
  MOV     R1, #1000                  \ Initialise the transmission interval to
@@ -1491,16 +1490,16 @@
  LDR     R0, gameOverAddr           \ Deploy the first GAME OVER patch if the
  MOV     R1, R0                     \ address is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     skipP
- BCS     skipP
+ BVS     skipM
+ BCS     skipM
  LDR     R1, gameOverPatch
  STR     R1, [R0]
 
  LDR     R0, restartAddr            \ Deploy the second GAME OVER patch if the
  MOV     R1, R0                     \ address is in logical RAM
  SWI     XOS_ValidateAddress
- BVS     skipP
- BCS     skipP
+ BVS     skipM
+ BCS     skipM
  LDR     R1, restartPatch
  STR     R1, [R0]
 

@@ -254,7 +254,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000318 0C20A0E3        	   203:  MOV     R2, #12
 00:0000031C 2D0002EF        	   204:  SWI     XOS_EvaluateExpression
 00:00000320 1200006A        	   205:  BVS     intv2
-00:00000324 000011E3        	   206:  TST     R1, #0
+00:00000324 000031E3        	   206:  TEQ     R1, #0
 00:00000328 1000001A        	   207:  BNE     intv2
 00:0000032C 640052E3        	   208:  CMP     R2, #100
 00:00000330 0E0000BA        	   209:  BLT     intv2
@@ -822,15 +822,15 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000C38 B0009FE5        	   686:  LDR     R0, gameOverAddr
 00:00000C3C 0010A0E1        	   687:  MOV     R1, R0
 00:00000C40 3A0002EF        	   688:  SWI     XOS_ValidateAddress
-00:00000C44 0B00006A        	   689:  BVS     skipP
-00:00000C48 0A00002A        	   690:  BCS     skipP
+00:00000C44 1900006A        	   689:  BVS     skipM
+00:00000C48 1800002A        	   690:  BCS     skipM
 00:00000C4C A0109FE5        	   691:  LDR     R1, gameOverPatch
 00:00000C50 001080E5        	   692:  STR     R1, [R0]
 00:00000C54 9C009FE5        	   693:  LDR     R0, restartAddr
 00:00000C58 0010A0E1        	   694:  MOV     R1, R0
 00:00000C5C 3A0002EF        	   695:  SWI     XOS_ValidateAddress
-00:00000C60 0400006A        	   696:  BVS     skipP
-00:00000C64 0300002A        	   697:  BCS     skipP
+00:00000C60 1200006A        	   696:  BVS     skipM
+00:00000C64 1100002A        	   697:  BCS     skipM
 00:00000C68 8C109FE5        	   698:  LDR     R1, restartPatch
 00:00000C6C 001080E5        	   699:  STR     R1, [R0]
 00:00000C70 0110A0E3        	   700:  MOV     R1, #1
