@@ -59,7 +59,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "0.10 (04 Apr 2025)"
+.byte    "1.00 (10 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -430,12 +430,14 @@ eliteStatusHelp:
 .balign 4
 SWIHandler:
  LDR     R12, [R12]
- CMP     R11, #2 * 4
+ CMP     R11, #4 * 4
  ADDLO   PC, PC, R11, LSL #2
  B       UnknownSWIError
 jump:
  B       SWI_Elite_GameOver
  B       SWI_Elite_GameRestart
+ B       SWI_Elite_GetStatus
+ B       SWI_Elite_SetStatus
 UnknownSWIError:
  ADR     R0, swiError
  MOV     R1, #0
@@ -454,6 +456,10 @@ swiDecodingTable:
 .byte    "GameOver"
 .byte    0
 .byte    "GameRestart"
+.byte    0
+.byte    "GetStatus"
+.byte    0
+.byte    "SetStatus"
 .byte    0
 .byte    0
 .balign 4
@@ -474,6 +480,62 @@ SWI_Elite_GameRestart:
 notDeath:
  MOV     R2, #0x12C
  MOVS    PC, R14
+SWI_Elite_GetStatus:
+ LDR     R0, [R12, #scorePort]
+ LDR     R1, [R12, #scoreStation]
+ LDR     R2, [R12, #scoreNetwork]
+ LDR     R3, [R12, #netTally]
+ LDR     R4, [R12, #netDeaths]
+ LDR     R5, [R12, #scoreEnabled]
+ LDR     R6, [R12, #scoreInterval]
+ MOVS    PC, R14
+SWI_Elite_SetStatus:
+ STMFD   R13!, {R14}
+ TEQ     R0, #1
+ BNE     sets1
+ SWI     XEconet_ReadStationNumber
+ BVS     stat1
+ CMN     R2, #1
+ BEQ     stat2
+ CMN     R3, #1
+ MOVEQ   R3, #0
+ STR     R2, [R12, #scoreStation]
+ STR     R3, [R12, #scoreNetwork]
+ B       sets6
+sets1:
+ TEQ     R0, #2
+ BNE     sets2
+ CMP     R1, #1
+ BLT     port1
+ CMP     R1, #254
+ BGT     port1
+ STR     R1, [R12, #scorePort]
+ B       sets6
+sets2:
+ TEQ     R0, #3
+ BNE     sets3
+ STR     R1, [R12, #netTally]
+ B       sets6
+sets3:
+ TEQ     R0, #4
+ BNE     sets4
+ STR     R1, [R12, #netDeaths]
+ B       sets6
+sets4:
+ TEQ     R0, #5
+ BNE     sets5
+ TEQ     R1, #0
+ MOVNE   R1, #1
+ STR     R1, [R12, #scoreEnabled]
+ B       sets6
+sets5:
+ TEQ     R0, #6
+ BNE     sets6
+ CMP     R1, #100
+ BLT     intv2
+ STR     R1, [R12, #scoreInterval]
+sets6:
+ LDMFD   R13!, {PC}^
 InitialiseModule:
  STMFD   R13!, {R14}
  LDR     R2, [R12]

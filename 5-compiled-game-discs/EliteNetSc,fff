@@ -263,7 +263,7 @@ REM ****************************************************************************
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "0.10 (04 Apr 2025)"
+ EQUS    "1.00 (10 Apr 2025)"
  EQUB    0
  OPT     FN_AlignWithZeroes
 
@@ -963,7 +963,7 @@ REM ****************************************************************************
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
 
- CMP     R11, #2 * 4                \ Jump to the correct SWI, if R11 is in
+ CMP     R11, #4 * 4                \ Jump to the correct SWI, if R11 is in
  ADDLO   PC, PC, R11, LSL #2        \ the correct range [i.e. the number of
                                     \ SWIs in the jump table * 4]
 
@@ -974,6 +974,10 @@ REM ****************************************************************************
  B       SWI_Elite_GameOver         \ Jump to SWI 0 within this chunk
 
  B       SWI_Elite_GameRestart      \ Jump to SWI 1 within this chunk
+
+ B       SWI_Elite_GetStatus        \ Jump to SWI 2 within this chunk
+
+ B       SWI_Elite_SetStatus        \ Jump to SWI 3 within this chunk
 
 .UnknownSWIError
 
@@ -1011,6 +1015,12 @@ REM ****************************************************************************
  EQUB    0
 
  EQUS    "GameRestart"              \ SWI Elite_GameRestart [&C0CC1]
+ EQUB    0
+
+ EQUS    "GetStatus"                \ SWI Elite_GetStatus [&C0CC2]
+ EQUB    0
+
+ EQUS    "SetStatus"                \ SWI Elite_SetStatus [&C0CC3]
  EQUB    0
 
  EQUB    0                          \ End of table
@@ -1065,6 +1075,125 @@ REM ****************************************************************************
  MOV     R2, #&12C                  \ Run the original code that we replaced
 
  MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name; SWI_Elite_GetStatus
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Code for the Elite_GetStatus SWI
+\
+\ ******************************************************************************
+
+.SWI_Elite_GetStatus
+
+ LDR     R0, [R12, #scorePort]      \ Set R0 to R6 to the values we want to
+ LDR     R1, [R12, #scoreStation]   \ return from the SWI
+ LDR     R2, [R12, #scoreNetwork]
+ LDR     R3, [R12, #netTally]
+ LDR     R4, [R12, #netDeaths]
+ LDR     R5, [R12, #scoreEnabled]
+ LDR     R6, [R12, #scoreInterval]
+
+ MOVS    PC, R14                    \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name; SWI_Elite_SetStatus
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Code for the Elite_SetStatus SWI
+\
+\ ******************************************************************************
+
+.SWI_Elite_SetStatus
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ TEQ     R0, #1                     \ Check R0 to match this SYS command;
+ BNE     sets1                      \ SYS 'Elite_SetStatus', 1, '<net.station>'
+
+ SWI     XEconet_ReadStationNumber  \ Try converting the string parameter to a
+                                    \ station and network number
+ 
+ BVS     stat1                      \ Report the SWI error if the conversion
+                                    \ went wrong, as this could mean that Econet
+                                    \ is disabled
+
+ CMN     R2, #1                     \ Report an error if the result does not
+ BEQ     stat2                      \ contain a valid station number
+
+ CMN     R3, #1                     \ Set R3 = 0 if the result does not contain
+ MOVEQ   R3, #0                     \ a valid network number
+
+ STR     R2, [R12, #scoreStation]   \ Set scoreNetwork to the new station number
+
+ STR     R3, [R12, #scoreNetwork]   \ Set scoreNetwork to the new network number
+
+ B       sets6                      \ Jump to sets6 to return from the
+                                    \ subroutine
+
+.sets1
+
+ TEQ     R0, #2                     \ Check R0 to match this SYS command;
+ BNE     sets2                      \ SYS 'Elite_SetStatus', 2, <port>
+
+ CMP     R1, #1                     \ Report an error if the port number is not
+ BLT     port1                      \ in the range 1 to 254
+ CMP     R1, #254
+ BGT     port1
+
+ STR     R1, [R12, #scorePort]      \ Update the port number
+
+ B       sets6                      \ Jump to sets6 to return from the
+                                    \ subroutine
+
+.sets2
+
+ TEQ     R0, #3                     \ Check R0 to match this SYS command;
+ BNE     sets3                      \ SYS 'Elite_SetStatus', 3, <kills>
+
+ STR     R1, [R12, #netTally]       \ Update the kill tally
+
+ B       sets6                      \ Jump to sets6 to return from the
+                                    \ subroutine
+
+.sets3
+
+ TEQ     R0, #4                     \ Check R0 to match this SYS command;
+ BNE     sets4                      \ SYS 'Elite_SetStatus', 4, <deaths>
+
+ STR     R1, [R12, #netDeaths]      \ Update the death count
+
+ B       sets6                      \ Jump to sets6 to return from the
+                                    \ subroutine
+
+.sets4
+
+ TEQ     R0, #5                     \ Check R0 to match this SYS command;
+ BNE     sets5                      \ SYS 'Elite_SetStatus', 5, <enabled>
+
+ TEQ     R1, #0                     \ Set R1 to 1 if it is non-zero
+ MOVNE   R1, #1
+
+ STR     R1, [R12, #scoreEnabled]   \ Update the enabled flag
+
+ B       sets6                      \ Jump to sets6 to return from the
+                                    \ subroutine
+
+.sets5
+
+ TEQ     R0, #6                     \ Check R0 to match this SYS command;
+ BNE     sets6                      \ SYS 'Elite_SetStatus', 6, <interval>
+
+ CMP     R1, #100                   \ Report an error if the interval is < 100
+ BLT     intv2
+
+ STR     R1, [R12, #scoreInterval]  \ Update the interval
+
+.sets6
+
+ LDMFD   R13!, {PC}^                \ Return from the subroutine
 
 \ ******************************************************************************
 \
