@@ -1,0 +1,195 @@
+REM           >!RunImage
+REM Program   Elite over Econet
+REM Version   1.00
+REM Author    Mark Moxon
+REM           April 2025
+:
+LIBRARY "<EliteNet$Dir>.WimpLib"
+IF FNlibrary_version<50 THEN ERROR 255,"Out of date version of Wimp Library"
+PROCinit
+SYS "OS_ReadMonotonicTime" TO oldtime%
+REPEAT
+ SYS "Wimp_Poll",0,block% TO reason%
+ CASE reason% OF
+  WHEN 0
+   SYS "OS_ReadMonotonicTime" TO newtime%
+   IF newtime%>oldtime%+500 THEN PROCupdate_icons:oldtime%=newtime%
+  WHEN 2:SYS "Wimp_OpenWindow",,block%
+  WHEN 3:SYS "Wimp_CloseWindow",,block%
+  WHEN 6:PROCmouse_click
+  WHEN 8:PROCkey_pressed
+  WHEN 9:PROCmenu_selection
+  WHEN 17,18:IF block%!16=0 THEN quit%=TRUE
+ENDCASE
+UNTIL quit%
+SYS "Wimp_CloseDown",task%,&4B534154
+END
+:
+DEF PROCinit
+DIM block% &1000,eblock% &100,bmenu% &1000
+DIM ind% 500,ind2% 200,tempname% 100,dc% &100
+ON ERROR PROCerror("")
+task_name$="Elite over Econet"
+quit%=FALSE:enabled=0
+i_reset%=3:i_station%=6:i_port%=7
+i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
+SYS "Wimp_Initialise",200,&4B534154,task_name$ TO wimp%,task%
+PROCtemplates
+PROCupdate_icons
+icon%=FNicon_bar_icon(block%,"!elitenet",-1)
+PROCinit_menu(bmenu%,width%,end%,"EliteEconet")
+PROCst_menu_item(bmenu%,width%,end%,"Info",0,0,0,0,info%)
+PROCst_menu_item(bmenu%,width%,end%,"Quit",0,0,0,1,-1)
+ENDPROC
+:
+DEF PROCerror(er$)
+LOCAL temp%
+IF er$="" THEN
+ IF FNwimperror(eblock%,ERR,REPORT$+" (internal error code "+STR$(ERL)+")",task_name$,0,1)=2 THEN $eblock%="TASK":SYS "Wimp_CloseDown",task%,!eblock%:END
+ELSE
+ temp%=FNwimperror(eblock%,255,er$,task_name$,1,0)
+ENDIF
+ENDPROC
+:
+DEF PROCtemplates
+Borders%=2
+IF wimp%>=310 THEN
+  REM Check 3D desktop 'look' is switched on in CMOS RAM
+  SYS "OS_Byte",161,140 TO ,,value%
+  IF (value% AND 1) THEN Borders%=3
+  REM Desktop 3D status is bit 1 of CMOS byte 140.
+ENDIF
+IF Borders%=3 THEN
+  SYS "Wimp_OpenTemplate",,"<EliteNet$Dir>.Template3D"
+ELSE
+  SYS "Wimp_OpenTemplate",,"<EliteNet$Dir>.Templates"
+ENDIF
+$tempname%="main"
+SYS "Wimp_LoadTemplate",,block%,ind%,ind%+499,-1,tempname%,0
+SYS "Wimp_CreateWindow",,block% TO main%
+$tempname%="progInfo"
+SYS "Wimp_LoadTemplate",,block%,ind2%,ind2%+199,-1,tempname%,0
+SYS "Wimp_CreateWindow",,block% TO info%
+SYS "Wimp_CloseTemplate"
+ENDPROC
+:
+DEF PROCmouse_click
+CASE TRUE OF
+ WHEN block%!12=-2 AND block%!8=2
+  mx%=!block%
+  menu_chosen%=bmenu%
+  PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+ WHEN block%!12=-2 AND block%!8<>2
+  !block%=main%
+  SYS "Wimp_GetWindowState",,block%
+  block%!28=-1
+  SYS "Wimp_OpenWindow",,block%
+ WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_enable%
+  !block%=main%
+  block%!4=i_enable%
+  SYS "Wimp_GetIconState",,block%
+  old_enabled%=((block%!8)>>21) AND 1
+  enabled%=old_enabled% EOR 1
+  SYS "XElite_SetStatus",5,enabled% TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN enabled%=old_enabled%:PROCerror(FNzero_string(errblk%+4))
+  PROCset_enable_icon
+ WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_reset%
+  !eblock%=255
+  $(eblock%+4)="Are you sure you want to reset the scores?"+CHR$(0)
+  flag%=%10111
+  SYS "Wimp_ReportError",eblock%,flag%,task_name$ TO ,response%
+  IF response%<>1 THEN ENDPROC
+  SYS "XElite_SetStatus",3,0 TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
+  SYS "XElite_SetStatus",4,0 TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
+  PROCupdate_icons
+ENDCASE
+ENDPROC
+:
+DEF PROCmenu_selection
+SYS "Wimp_DecodeMenu",,menu_chosen%,block%,dc%
+SYS "Wimp_GetPointerInfo",,block%
+adjust%=block%!8 AND 1
+IF menu_chosen%=bmenu% AND $dc%="Quit" THEN quit%=TRUE
+IF adjust%=1 THEN PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+ENDPROC
+:
+DEF PROCkey_pressed
+IF !block%=main% THEN
+ CASE block%!24 OF
+  WHEN 13,&18E
+   IF block%!4=i_interval% THEN i%=i_station% ELSE i%=block%!4+1
+   PROCprocess_keys
+  WHEN &18F
+   IF block%!4=i_station% THEN i%=i_interval% ELSE i%=block%!4-1
+   PROCprocess_keys
+  OTHERWISE
+   SYS "Wimp_ProcessKey",block%!24
+  ENDCASE
+ELSE
+ SYS "Wimp_ProcessKey",block%!24
+ENDIF
+ENDPROC
+:
+DEF PROCprocess_keys
+CASE block%!4 OF
+ WHEN i_station%
+  !block%=main%
+  block%!4=i_station%
+  SYS "Wimp_GetIconState",,block%
+  stn$=$(block%!28)
+  SYS "XElite_SetStatus",1,block%!28 TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+ WHEN i_port%
+  !block%=main%
+  block%!4=i_port%
+  SYS "Wimp_GetIconState",,block%
+  port$=$(block%!28)
+  port%=VAL(port$)
+  SYS "XElite_SetStatus",2,port% TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+ WHEN i_interval%
+  !block%=main%
+  block%!4=i_interval%
+  SYS "Wimp_GetIconState",,block%
+  interval$=$(block%!28)
+  interval%=VAL(interval$)*100
+  SYS "XElite_SetStatus",6,interval% TO errblk%;nzcv%
+  IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+ENDCASE
+PROCupdate_icons
+!block%=main%
+block%!4=i%
+SYS "Wimp_GetIconState",,block%
+SYS "Wimp_SetCaretPosition",main%,i%,,,-1,LEN($(block%!28))
+ENDPROC
+:
+DEF PROCupdate_icons
+SYS "XElite_GetStatus" TO port%,station%,network%,kills%,deaths%,enabled%,interval%;nzcv%
+IF nzcv% AND 1 THEN PROCerror(FNzero_string(port%+4)):ENDPROC
+PROCset_icons
+ENDPROC
+:
+DEF PROCset_icons
+IF port%>0 THEN PROCchange_icon(block%,main%,i_port%,STR$(port%)) ELSE PROCchange_icon(block%,main%,i_port%,"")
+IF station%>0 OR network%>0 THEN PROCchange_icon(block%,main%,i_station%,FNstation_number(station%,network%)) ELSE PROCchange_icon(block%,main%,i_station%,"")
+PROCchange_icon(block%,main%,i_interval%,STR$(interval% DIV 100)+"."+STR$(interval% MOD 100))
+PROCchange_icon(block%,main%,i_kills%,STR$(kills%))
+PROCchange_icon(block%,main%,i_deaths%,STR$(deaths%))
+PROCset_enable_icon
+ENDPROC
+:
+DEF PROCset_enable_icon
+!block%=main%
+block%!4=i_enable%
+block%!8=enabled%<<21
+block%!12=1<<21
+SYS "Wimp_SetIconState",,block%
+ENDPROC
+:
+DEF FNstation_number(station%,network%)
+zero$=""
+IF station% < 100 THEN zero$="0"
+IF station% < 10 THEN zero$="00"
+=STR$(station%)+"."+zero$+STR$(network%)

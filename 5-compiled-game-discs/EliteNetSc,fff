@@ -1130,7 +1130,7 @@ REM ****************************************************************************
 
  STR     R3, [R12, #scoreNetwork]   \ Set scoreNetwork to the new network number
 
- B       sets6                      \ Jump to sets6 to return from the
+ B       sets7                      \ Jump to sets7 to return from the
                                     \ subroutine
 
 .sets1
@@ -1145,7 +1145,7 @@ REM ****************************************************************************
 
  STR     R1, [R12, #scorePort]      \ Update the port number
 
- B       sets6                      \ Jump to sets6 to return from the
+ B       sets7                      \ Jump to sets7 to return from the
                                     \ subroutine
 
 .sets2
@@ -1155,7 +1155,7 @@ REM ****************************************************************************
 
  STR     R1, [R12, #netTally]       \ Update the kill tally
 
- B       sets6                      \ Jump to sets6 to return from the
+ B       sets7                      \ Jump to sets7 to return from the
                                     \ subroutine
 
 .sets3
@@ -1165,33 +1165,45 @@ REM ****************************************************************************
 
  STR     R1, [R12, #netDeaths]      \ Update the death count
 
- B       sets6                      \ Jump to sets6 to return from the
+ B       sets7                      \ Jump to sets7 to return from the
                                     \ subroutine
 
 .sets4
 
  TEQ     R0, #5                     \ Check R0 to match this SYS command;
- BNE     sets5                      \ SYS 'Elite_SetStatus', 5, <enabled>
+ BNE     sets6                      \ SYS 'Elite_SetStatus', 5, <enabled>
 
  TEQ     R1, #0                     \ Set R1 to 1 if it is non-zero
  MOVNE   R1, #1
 
- STR     R1, [R12, #scoreEnabled]   \ Update the enabled flag
+ BEQ     sets5                      \ If R1 is 0 then we are disabling
+                                    \ transmissions, so jump to sets5 to skip
+                                    \ the station and port number checks
 
- B       sets6                      \ Jump to sets6 to return from the
-                                    \ subroutine
+ LDR     R0, [R12, #scorePort]      \ If either the port number or station
+ TEQ     R0, #0                     \ number are zero, jump to star2 to report
+ LDRNE   R0, [R12, #scoreStation]   \ this and prevent startup
+ TEQNE   R0, #0
+ BEQ     star2
 
 .sets5
 
+ STR     R1, [R12, #scoreEnabled]   \ Update the enabled flag
+
+ B       sets7                      \ Jump to sets7 to return from the
+                                    \ subroutine
+
+.sets6
+
  TEQ     R0, #6                     \ Check R0 to match this SYS command;
- BNE     sets6                      \ SYS 'Elite_SetStatus', 6, <interval>
+ BNE     sets7                      \ SYS 'Elite_SetStatus', 6, <interval>
 
  CMP     R1, #100                   \ Report an error if the interval is < 100
  BLT     intv2
 
  STR     R1, [R12, #scoreInterval]  \ Update the interval
 
-.sets6
+.sets7
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 

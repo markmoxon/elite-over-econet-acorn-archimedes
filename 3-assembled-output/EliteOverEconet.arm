@@ -501,7 +501,7 @@ SWI_Elite_SetStatus:
  MOVEQ   R3, #0
  STR     R2, [R12, #scoreStation]
  STR     R3, [R12, #scoreNetwork]
- B       sets6
+ B       sets7
 sets1:
  TEQ     R0, #2
  BNE     sets2
@@ -510,31 +510,38 @@ sets1:
  CMP     R1, #254
  BGT     port1
  STR     R1, [R12, #scorePort]
- B       sets6
+ B       sets7
 sets2:
  TEQ     R0, #3
  BNE     sets3
  STR     R1, [R12, #netTally]
- B       sets6
+ B       sets7
 sets3:
  TEQ     R0, #4
  BNE     sets4
  STR     R1, [R12, #netDeaths]
- B       sets6
+ B       sets7
 sets4:
  TEQ     R0, #5
- BNE     sets5
+ BNE     sets6
  TEQ     R1, #0
  MOVNE   R1, #1
- STR     R1, [R12, #scoreEnabled]
- B       sets6
+ BEQ     sets5
+ LDR     R0, [R12, #scorePort]
+ TEQ     R0, #0
+ LDRNE   R0, [R12, #scoreStation]
+ TEQNE   R0, #0
+ BEQ     star2
 sets5:
+ STR     R1, [R12, #scoreEnabled]
+ B       sets7
+sets6:
  TEQ     R0, #6
- BNE     sets6
+ BNE     sets7
  CMP     R1, #100
  BLT     intv2
  STR     R1, [R12, #scoreInterval]
-sets6:
+sets7:
  LDMFD   R13!, {PC}^
 InitialiseModule:
  STMFD   R13!, {R14}
