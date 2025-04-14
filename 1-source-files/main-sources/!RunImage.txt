@@ -1,8 +1,6 @@
-REM           >!RunImage
-REM Program   Elite over Econet
-REM Version   1.00
-REM Author    Mark Moxon
-REM           April 2025
+REM !RunImage
+REM Elite over Econet
+REM By Mark Moxon
 :
 LIBRARY "<EliteNet$Dir>.WimpLib"
 IF FNlibrary_version<50 THEN ERROR 255,"Out of date version of Wimp Library"
@@ -30,11 +28,14 @@ DEF PROCinit
  DIM ind% 500,ind2% 200,tempname% 100,dc% &100
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
+ version$="1.00 (14-Apr-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
+ i_version%=4
  SYS "Wimp_Initialise",200,&4B534154,task_name$ TO wimp%,task%
  PROCtemplates
+ PROCchange_icon(block%,info%,i_version%,version$)
  PROCupdate_icons
  icon%=FNicon_bar_icon(block%,"!elitenet",-1)
  PROCinit_menu(bmenu%,width%,end%,"EliteEconet")
