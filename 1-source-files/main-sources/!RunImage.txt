@@ -37,8 +37,9 @@ DEF PROCinit
  PROCtemplates
  PROCchange_icon(block%,info%,i_version%,version$)
  PROCupdate_icons
- icon%=FNicon_bar_icon(block%,"!elitenet",-1)
- PROCinit_menu(bmenu%,width%,end%,"EliteEconet")
+ flag%=FNicon_flags(0,1,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0)
+ icon_bar%=FNcreate_icon(block%,-1,0,-68,92,68,flag%,"!elitenet",0,0,0)
+ PROCinit_menu(bmenu%,width%,end%,"EliteNet")
  PROCst_menu_item(bmenu%,width%,end%,"Info",0,0,0,0,info%)
  PROCst_menu_item(bmenu%,width%,end%,"Quit",0,0,0,1,-1)
 ENDPROC

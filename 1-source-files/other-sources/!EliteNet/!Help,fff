@@ -1,5 +1,10 @@
 Elite over Econet
 by Mark Moxon
 
-This application sends score from Archimedes Elite to an Econet scoreboard.
+This application sends scores from Archimedes Elite
+to an Econet scoreboard.
 
+It needs version 1.14 of Elite (available from Ian
+Bell's website) and a working Econet connection.
+
+See www.bbcelite.com/hacks for details.
