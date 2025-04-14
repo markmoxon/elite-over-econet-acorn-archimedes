@@ -263,7 +263,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (10 Apr 2025)"
+ EQUS    "1.00 (14 Apr 2025)"
  EQUB    0
  ALIGN
 
@@ -427,6 +427,12 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxPort command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxPort_SWI                 Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxPort
@@ -445,6 +451,8 @@
 
  TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     port1                      \ integer
+
+.EliteTxPort_SWI
 
  CMP     R2, #1                     \ Report an error if the port number is not
  BLT     port1                      \ in the range 1 to 254
@@ -486,6 +494,12 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxStation command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxStation_SWI              Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxStation
@@ -494,6 +508,8 @@
 
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
+
+.EliteTxStation_SWI
 
  MOV     R1, R0                     \ Try converting the parameter to a station
  SWI     XEconet_ReadStationNumber  \ and network number
@@ -548,6 +564,13 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxInterval command
 \
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxInterval_SWI             Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxInterval
@@ -566,6 +589,8 @@
 
  TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     intv2                      \ integer
+
+.EliteTxInterval_SWI
 
  CMP     R2, #100                   \ Report an error if the interval is < 100
  BLT     intv2
@@ -626,6 +651,12 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxStop command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxStop_SWI                 Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxStop
@@ -634,6 +665,8 @@
 
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
+
+.EliteTxStop_SWI
 
  LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
 
@@ -683,6 +716,12 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxStart command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxStart_SWI                Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxStart
@@ -691,6 +730,8 @@
 
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
+
+.EliteTxStart_SWI
 
  LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
 
@@ -1113,40 +1154,20 @@
  TEQ     R0, #1                     \ Check R0 to match this SYS command:
  BNE     sets1                      \ SYS "Elite_SetStatus", 1, "<net.station>"
 
- SWI     XEconet_ReadStationNumber  \ Try converting the string parameter to a
-                                    \ station and network number
- 
- BVS     stat1                      \ Report the SWI error if the conversion
-                                    \ went wrong, as this could mean that Econet
-                                    \ is disabled
-
- CMN     R2, #1                     \ Report an error if the result does not
- BEQ     stat2                      \ contain a valid station number
-
- CMN     R3, #1                     \ Set R3 = 0 if the result does not contain
- MOVEQ   R3, #0                     \ a valid network number
-
- STR     R2, [R12, #scoreStation]   \ Set scoreNetwork to the new station number
-
- STR     R3, [R12, #scoreNetwork]   \ Set scoreNetwork to the new network number
-
- B       sets7                      \ Jump to sets7 to return from the
-                                    \ subroutine
+ MOV     R0, R1                     \ Move the argument into R0 and jump to the
+ B       EliteTxStation_SWI         \ entry point in EliteTxStation to set the
+                                    \ station number and return from the
+                                    \ subroutine using a tail call
 
 .sets1
 
  TEQ     R0, #2                     \ Check R0 to match this SYS command:
  BNE     sets2                      \ SYS "Elite_SetStatus", 2, <port>
 
- CMP     R1, #1                     \ Report an error if the port number is not
- BLT     port1                      \ in the range 1 to 254
- CMP     R1, #254
- BGT     port1
-
- STR     R1, [R12, #scorePort]      \ Update the port number
-
- B       sets7                      \ Jump to sets7 to return from the
-                                    \ subroutine
+ MOV     R2, R1                     \ Move the argument into R2 and jump to the
+ B       EliteTxPort_SWI            \ entry point in EliteTxPort to set the port
+                                    \ number and return from the subroutine
+                                    \ using a tail call
 
 .sets2
 
@@ -1155,7 +1176,7 @@
 
  STR     R1, [R12, #netTally]       \ Update the kill tally
 
- B       sets7                      \ Jump to sets7 to return from the
+ B       sets6                      \ Jump to sets6 to return from the
                                     \ subroutine
 
 .sets3
@@ -1165,45 +1186,39 @@
 
  STR     R1, [R12, #netDeaths]      \ Update the death count
 
- B       sets7                      \ Jump to sets7 to return from the
+ B       sets6                      \ Jump to sets6 to return from the
                                     \ subroutine
 
 .sets4
 
  TEQ     R0, #5                     \ Check R0 to match this SYS command:
- BNE     sets6                      \ SYS "Elite_SetStatus", 5, <enabled>
+ BNE     sets5                      \ SYS "Elite_SetStatus", 5, <enabled>
 
- TEQ     R1, #0                     \ Set R1 to 1 if it is non-zero
- MOVNE   R1, #1
+ TEQ     R1, #0                     \ Test the <enabled> argument in R1
 
- BEQ     sets5                      \ If R1 is 0 then we are disabling
-                                    \ transmissions, so jump to sets5 to skip
-                                    \ the station and port number checks
+ BEQ     EliteTxStop_SWI            \ If R1 is 0 then we are disabling
+                                    \ transmissions, so jump to the entry point
+                                    \ in EliteTxStop to stop transmissions
+                                    \ and return from the subroutine using a
+                                    \ tail call
 
- LDR     R0, [R12, #scorePort]      \ If either the port number or station
- TEQ     R0, #0                     \ number are zero, jump to star2 to report
- LDRNE   R0, [R12, #scoreStation]   \ this and prevent startup
- TEQNE   R0, #0
- BEQ     star2
+ BNE     EliteTxStart_SWI           \ If R1 is 0 then we are enabling
+                                    \ transmissions, so jump to the entry point
+                                    \ in EliteTxStart to stop transmissions
+                                    \ and return from the subroutine using a
+                                    \ tail call
 
 .sets5
 
- STR     R1, [R12, #scoreEnabled]   \ Update the enabled flag
+ TEQ     R0, #6                     \ Check R0 to match this SYS command:
+ BNE     sets6                      \ SYS "Elite_SetStatus", 6, <interval>
 
- B       sets7                      \ Jump to sets7 to return from the
-                                    \ subroutine
+ MOV     R2, R1                     \ Move the argument into R2 and jump to the
+ B       EliteTxInterval_SWI        \ entry point in EliteTxInterval to set the
+                                    \ interval and return from the subroutine
+                                    \ using a tail call
 
 .sets6
-
- TEQ     R0, #6                     \ Check R0 to match this SYS command:
- BNE     sets7                      \ SYS "Elite_SetStatus", 6, <interval>
-
- CMP     R1, #100                   \ Report an error if the interval is < 100
- BLT     intv2
-
- STR     R1, [R12, #scoreInterval]  \ Update the interval
-
-.sets7
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
