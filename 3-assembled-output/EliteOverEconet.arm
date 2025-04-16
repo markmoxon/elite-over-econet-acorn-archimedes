@@ -208,7 +208,7 @@ EliteTxInterval:
  TEQ     R1, #0
  BNE     intv2
 EliteTxInterval_SWI:
- TEQ     R2, #00
+ TEQ     R2, #0
  BEQ     intv2
  STR     R2, [R12, #scoreInterval]
  LDR     R1, [R12, #scoreEnabled]
@@ -284,6 +284,9 @@ EliteTxStart_SWI:
  LDRNE   R2, [R12, #scoreStation]
  TEQNE   R2, #0
  BEQ     star2
+ ADRL    R0, TransmitData
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
  LDR     R0, [R12, #scoreInterval]
  MOV     R1, #100
  MUL     R0, R1, R0

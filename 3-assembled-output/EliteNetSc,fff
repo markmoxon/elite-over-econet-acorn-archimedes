@@ -592,7 +592,7 @@ REM ****************************************************************************
 
 .EliteTxInterval_SWI
 
- TEQ     R2, #00                    \ Report an error if the interval is zero
+ TEQ     R2, #0                     \ Report an error if the interval is zero
  BEQ     intv2
 
  STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the interval in
@@ -750,6 +750,12 @@ REM ****************************************************************************
 
  BEQ     star2                      \ If either of them is zero, jump to star2
                                     \ to report this and prevent startup
+
+ FN_ADRL(0, TransmitData)           \ Remove the TransmitData routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called [just to make sure there are no
+                                    \ lingering ticker events from previous
+                                    \ actions]
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  MOV     R1, #100                   \ into the ticker event list so it gets

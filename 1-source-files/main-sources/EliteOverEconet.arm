@@ -751,6 +751,12 @@
  BEQ     star2                      \ If either of them is zero, jump to star2
                                     \ to report this and prevent startup
 
+ ADRL    R0, TransmitData           \ Remove the TransmitData routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called (just to make sure there are no
+                                    \ lingering ticker events from previous
+                                    \ actions)
+
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  MOV     R1, #100                   \ into the ticker event list so it gets
  MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
