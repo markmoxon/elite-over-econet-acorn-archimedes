@@ -265,11 +265,11 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000338 34109CE5        	   214:  LDR     R1, [R12, #scoreEnabled]
 00:0000033C 000031E3        	   215:  TEQ     R1, #0
 00:00000340 0800000A        	   216:  BEQ     intv1
-00:00000344 070C8FE2140080E2	   217:  ADR     R0, TransmitData
+00:00000344 070C8FE2140080E2	   217:  ADRL    R0, TransmitData
 00:0000034C 0C10A0E1        	   218:  MOV     R1, R12
 00:00000350 3D0002EF        	   219:  SWI     XOS_RemoveTickerEvent
 00:00000354 38009CE5        	   220:  LDR     R0, [R12, #scoreInterval]
-00:00000358 031C8FE2011B81E2	   221:  ADR     R1, TransmitData
+00:00000358 031C8FE2011B81E2	   221:  ADRL    R1, TransmitData
 00:00000360 0C20A0E1        	   222:  MOV     R2, R12
 00:00000364 3C0002EF        	   223:  SWI     XOS_CallEvery
                             	   224: intv1:
@@ -318,7 +318,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000430 0700000A        	   249:  BEQ     stop1
 00:00000434 0000A0E3        	   250:  MOV     R0, #0
 00:00000438 34008CE5        	   251:  STR     R0, [R12, #scoreEnabled]
-00:0000043C 060C8FE21C0080E2	   252:  ADR     R0, TransmitData
+00:0000043C 060C8FE21C0080E2	   252:  ADRL    R0, TransmitData
 00:00000444 0C10A0E1        	   253:  MOV     R1, R12
 00:00000448 3D0002EF        	   254:  SWI     XOS_RemoveTickerEvent
 00:0000044C 0000A0E3        	   255:  MOV     R0, #0
@@ -364,7 +364,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:000004F0 0100A0E3        	   284:  MOV     R0, #1
 00:000004F4 34008CE5        	   285:  STR     R0, [R12, #scoreEnabled]
 00:000004F8 38009CE5        	   286:  LDR     R0, [R12, #scoreInterval]
-00:000004FC 051C8FE25C1081E2	   287:  ADR     R1, TransmitData
+00:000004FC 051C8FE25C1081E2	   287:  ADRL    R1, TransmitData
 00:00000504 0C20A0E1        	   288:  MOV     R2, R12
 00:00000508 3C0002EF        	   289:  SWI     XOS_CallEvery
 00:0000050C 0000A0E3        	   290:  MOV     R0, #0
@@ -582,7 +582,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:000008A0 14008FE2        	   447:  ADR     R0, swiError
 00:000008A4 0010A0E3        	   448:  MOV     R1, #0
 00:000008A8 0020A0E3        	   449:  MOV     R2, #0
-00:000008AC 024B4FE2884044E2	   450:  ADR     R4, title
+00:000008AC 024B4FE2884044E2	   450:  ADRL    R4, title
 00:000008B4 160506EF        	   451:  SWI     XMessageTrans_ErrorLookup
 00:000008B8 01F29EE3        	   452:  ORRS    PC, R14, #1<<28
                             	   453: swiError:
@@ -774,7 +774,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000B50 0D2C8203        	   636:  ORREQ   R2, R2, #0x00000D00
 00:00000B54 FF0812E3        	   637:  TST     R2, #0x00FF0000
 00:00000B58 0D288203        	   638:  ORREQ   R2, R2, #0x000D0000
-00:00000B5C FF24C2E3        	   639:  AND     R2, R2, #0x00FFFFFF
+00:00000B5C FF24C2E3        	   639:  BIC     R2, R2, #0xFF000000
 00:00000B60 0D2482E3        	   640:  ORR     R2, R2, #0x0D000000
 00:00000B64 24208CE5        	   641:  STR     R2, [R12, #trName+4]
 00:00000B68 0130A0E3        	   642:  MOV     R3, #1

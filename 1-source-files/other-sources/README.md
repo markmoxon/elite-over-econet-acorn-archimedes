@@ -1,12 +1,10 @@
 # Annotated source code for Elite over Econet on the Acorn Archimedes
 
-This folder contains the files that make up the !EliteNet RISC OS application folder in Elite over Econet on the Acorn Archimedes.
+This folder contains the files that make up the !EliteNet RISC OS application folder in Elite over Econet on the Acorn Archimedes. It also contains a MakeBasic folder that converts the textual BASIC source for !RunImage and EliteNetSc into tokenised BASIC programs 
 
-* [!Run,feb](!Run,feb) is the application's run Obey file
+* [!EliteNet](!EliteNet) contains all the files for the Elite over Econet application except for the !RunImage BASIC program and the EliteNet module
 
-* [!Sprites,ff9](!Sprites,ff9) contains the application's sprites
-
-* [MemAlloc,ffa](MemAlloc,ffa) is the application's memory allocation module
+* [MakeBasic](MakeBasic) contains the scripts that convert the text sources for the !RunImage BASIC program and the EliteNet module into tokenised BASIC programs that can be run on an Archimedes to produce the final application
 
 ---
 

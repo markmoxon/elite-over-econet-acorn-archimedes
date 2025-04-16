@@ -602,7 +602,7 @@
  TEQ     R1, #0                     \ If transmissions are stopped, jump to
  BEQ     intv1                      \ intv1 to skip the ticker event reset
 
- ADR     R0, TransmitData           \ Remove the TransmitData routine from the
+ ADRL    R0, TransmitData           \ Remove the TransmitData routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
  SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
                                     \ module's private workspace so it matches
@@ -610,7 +610,7 @@
                                     \ the routine to the ticker list)
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- ADR     R1, TransmitData           \ into the ticker event list so it gets
+ ADRL    R1, TransmitData           \ into the ticker event list so it gets
  MOV     R2, R12                    \ called every scoreInterval centiseconds,
  SWI     XOS_CallEvery              \ to transmit the commander data to the
                                     \ scoreboard
@@ -676,7 +676,7 @@
  MOV     R0, #0                     \ Set scoreEnabled = 0 to denote that score
  STR     R0, [R12, #scoreEnabled]   \ transmissions are disabled
 
- ADR     R0, TransmitData           \ Remove the TransmitData routine from the
+ ADRL    R0, TransmitData           \ Remove the TransmitData routine from the
  MOV     R1, R12                    \ ticker event list so it is no longer
  SWI     XOS_RemoveTickerEvent      \ called (we set R1 to the address of the
                                     \ module's private workspace so it matches
@@ -750,7 +750,7 @@
  STR     R0, [R12, #scoreEnabled]   \ transmissions are enabled
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- ADR     R1, TransmitData           \ into the ticker event list so it gets
+ ADRL    R1, TransmitData           \ into the ticker event list so it gets
  MOV     R2, R12                    \ called every scoreInterval centiseconds,
  SWI     XOS_CallEvery              \ to transmit the commander data to the
                                     \ scoreboard
@@ -1025,7 +1025,7 @@
  ADR     R0, swiError               \ Transform the error message token in
  MOV     R1, #0                     \ swiError
  MOV     R2, #0
- ADR     R4, title
+ ADRL    R4, title
  SWI     XMessageTrans_ErrorLookup
 
  ORRS    PC, R14, #1<<28            \ Return from the subroutine with the V flag
@@ -1451,7 +1451,7 @@
  ORREQ   R2, R2, #&00000D00         \ a carriage return
  TST     R2, #&00FF0000
  ORREQ   R2, R2, #&000D0000
- AND     R2, R2, #&00FFFFFF
+ BIC     R2, R2, #&FF000000
  ORR     R2, R2, #&0D000000
  STR     R2, [R12, #trName+4]
 
@@ -1784,4 +1784,5 @@
 \
 \ ******************************************************************************
 
- OSCLI "SAVE EliteNet.bin "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
+ OSCLI "SAVE EliteNet "+STR$~CODE%+" "+STR$~O%+" "+STR$~CODE+" "+STR$~CODE
+ OSCLI "SetType EliteNet Module"

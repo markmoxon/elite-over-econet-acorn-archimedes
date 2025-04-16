@@ -1,0 +1,205 @@
+REM !RunImage
+REM Elite over Econet
+REM By Mark Moxon
+:
+LIBRARY "<EliteNet$Dir>.WimpLib"
+IF FNlibrary_version<50 THEN ERROR 255,"Out of date version of Wimp Library"
+PROCinit
+SYS "OS_ReadMonotonicTime" TO oldtime%
+REPEAT
+ SYS "Wimp_Poll",0,block% TO reason%
+ CASE reason% OF
+  WHEN 0
+   SYS "OS_ReadMonotonicTime" TO newtime%
+   IF newtime%>oldtime%+500 THEN oldtime%=newtime%:PROCupdate_scores
+  WHEN 2:SYS "Wimp_OpenWindow",,block%
+  WHEN 3:SYS "Wimp_CloseWindow",,block%
+  WHEN 6:PROCmouse_click
+  WHEN 8:PROCkey_pressed
+  WHEN 9:PROCmenu_selection
+  WHEN 17,18:IF block%!16=0 THEN quit%=TRUE
+ ENDCASE
+UNTIL quit%
+SYS "Wimp_CloseDown",task%,&4B534154
+END
+:
+DEF PROCinit
+ DIM block% &1000,eblock% &100,bmenu% &1000
+ DIM ind% 500,ind2% 200,tempname% 100,dc% &100
+ ON ERROR PROCerror("")
+ task_name$="Elite over Econet"
+ version$="1.00 (14-Apr-2025)"
+ quit%=FALSE:tx_enabled%=0:nzcv%=0
+ i_reset%=3:i_station%=6:i_port%=7
+ i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
+ i_version%=4
+ SYS "Wimp_Initialise",200,&4B534154,task_name$ TO wimp%,task%
+ PROCtemplates
+ PROCchange_icon(block%,info%,i_version%,version$)
+ PROCupdate_icons
+ flag%=FNicon_flags(0,1,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0)
+ icon_bar%=FNcreate_icon(block%,-1,0,-68,92,68,flag%,"!elitenet",0,0,0)
+ PROCinit_menu(bmenu%,width%,end%,"EliteNet")
+ PROCst_menu_item(bmenu%,width%,end%,"Info",0,0,0,0,info%)
+ PROCst_menu_item(bmenu%,width%,end%,"Quit",0,0,0,1,-1)
+ENDPROC
+:
+DEF PROCerror(er$)
+ LOCAL temp%
+ IF er$="" THEN
+  IF FNwimperror(eblock%,ERR,REPORT$+" (internal error code "+STR$(ERL)+")",task_name$,0,1)=2 THEN $eblock%="TASK":SYS "Wimp_CloseDown",task%,!eblock%:END
+ ELSE
+  temp%=FNwimperror(eblock%,255,er$,task_name$,1,0)
+ ENDIF
+ENDPROC
+:
+DEF PROCtemplates
+ SYS "Wimp_OpenTemplate",,"<EliteNet$Dir>.Templates"
+ $tempname%="main"
+ SYS "Wimp_LoadTemplate",,block%,ind%,ind%+499,-1,tempname%,0
+ SYS "Wimp_CreateWindow",,block% TO main%
+ $tempname%="progInfo"
+ SYS "Wimp_LoadTemplate",,block%,ind2%,ind2%+199,-1,tempname%,0
+ SYS "Wimp_CreateWindow",,block% TO info%
+ SYS "Wimp_CloseTemplate"
+ENDPROC
+:
+DEF PROCmouse_click
+ CASE TRUE OF
+  WHEN block%!12=-2 AND block%!8=2
+   mx%=!block%
+   menu_chosen%=bmenu%
+   PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+  WHEN block%!12=-2 AND block%!8<>2
+   !block%=main%
+   SYS "Wimp_GetWindowState",,block%
+   block%!28=-1
+   SYS "Wimp_OpenWindow",,block%
+  WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_enable%
+   PROCfetch_status
+   tx_enabled%=tx_enabled% EOR 1
+   SYS "XElite_SetStatus",5,tx_enabled% TO errblk%;nzcv%
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+   PROCupdate_icons
+  WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_reset%
+   !eblock%=255
+   $(eblock%+4)="Are you sure you want to reset the scores?"+CHR$(0)
+   flag%=%10111
+   SYS "Wimp_ReportError",eblock%,flag%,task_name$ TO ,response%
+   IF response%=1 THEN
+    SYS "XElite_SetStatus",3,0 TO errblk%;nzcv%
+    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
+    SYS "XElite_SetStatus",4,0 TO errblk%;nzcv%
+    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
+    PROCupdate_icons
+   ENDIF
+ ENDCASE
+ENDPROC
+:
+DEF PROCmenu_selection
+ SYS "Wimp_DecodeMenu",,menu_chosen%,block%,dc%
+ SYS "Wimp_GetPointerInfo",,block%
+ adjust%=block%!8 AND 1
+ IF menu_chosen%=bmenu% AND $dc%="Quit" THEN quit%=TRUE
+ IF adjust%=1 THEN PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+ENDPROC
+:
+DEF PROCkey_pressed
+ IF !block%=main% THEN
+  CASE block%!24 OF
+   WHEN 13,&18E
+    IF block%!4=i_interval% THEN i%=i_station% ELSE i%=block%!4+1
+    PROCreturn_or_arrow_key
+   WHEN &18F
+    IF block%!4=i_station% THEN i%=i_interval% ELSE i%=block%!4-1
+    PROCreturn_or_arrow_key
+   OTHERWISE
+    SYS "Wimp_ProcessKey",block%!24
+   ENDCASE
+ ELSE
+  SYS "Wimp_ProcessKey",block%!24
+ ENDIF
+ENDPROC
+:
+DEF PROCreturn_or_arrow_key
+ CASE block%!4 OF
+  WHEN i_station%
+   stn$=FNget_icon_string(i_station%)
+   SYS "XElite_SetStatus",1,block%!28 TO errblk%;nzcv%
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+  WHEN i_port%
+   port%=FNget_icon_value(i_port%)
+   SYS "XElite_SetStatus",2,port% TO errblk%;nzcv%
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+  WHEN i_interval%
+   interval%=FNget_icon_value(i_interval%)*100
+   SYS "XElite_SetStatus",6,interval% TO errblk%;nzcv%
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+ ENDCASE
+ PROCupdate_icons
+ !block%=main%
+ block%!4=i%
+ SYS "Wimp_GetIconState",,block%
+ SYS "Wimp_SetCaretPosition",main%,i%,,,-1,LEN($(block%!28))
+ENDPROC
+:
+DEF PROCfetch_status
+ SYS "XElite_GetStatus" TO port%,station%,network%,kills%,deaths%,tx_enabled%,interval%;nzcv%
+ENDPROC
+:
+DEF PROCupdate_icons
+ PROCfetch_status
+ IF nzcv% AND 1 THEN PROCerror(FNzero_string(port%+4)) ELSE PROCset_icons
+ENDPROC
+:
+DEF PROCset_icons
+ IF port%>0 THEN PROCchange_icon(block%,main%,i_port%,STR$(port%)) ELSE PROCchange_icon(block%,main%,i_port%,"")
+ IF station%>0 OR network%>0 THEN PROCchange_icon(block%,main%,i_station%,FNstation_number(station%,network%)) ELSE PROCchange_icon(block%,main%,i_station%,"")
+ PROCchange_icon(block%,main%,i_interval%,STR$(interval% DIV 100)+"."+STR$(interval% MOD 100))
+ PROCchange_icon(block%,main%,i_kills%,STR$(kills%))
+ PROCchange_icon(block%,main%,i_deaths%,STR$(deaths%))
+ PROChideShowEnable
+ PROChideShowReset
+ENDPROC
+:
+DEF FNstation_number(station%,network%)
+ zero$=""
+ IF station%<100 THEN zero$="0"
+ IF station%<10 THEN zero$="00"
+=STR$(network%)+"."+zero$+STR$(station%)
+:
+DEF PROCupdate_scores
+ PROCfetch_status
+ old_kills%=VAL(FNget_icon_string(i_kills%))
+ IF kills%<>old_kills% THEN PROCchange_icon(block%,main%,i_kills%,STR$(kills%))
+ old_deaths%=VAL(FNget_icon_string(i_deaths%))
+ IF deaths%<>old_deaths% THEN PROCchange_icon(block%,main%,i_deaths%,STR$(deaths%))
+ PROChideShowReset
+ENDPROC
+:
+DEF FNget_icon_string(icon%)
+ !block%=main%
+ block%!4=icon%
+ SYS "Wimp_GetIconState",,block%
+=$(block%!28)
+:
+DEF FNget_icon_value(icon%)
+=VAL(FNget_icon_string(icon%))
+:
+DEF PROChideShowReset
+ IF kills%=0 AND deaths%=0 THEN grey_out%=1 ELSE grey_out%=0
+ !block%=main%
+ block%!4=i_reset%
+ block%!8=grey_out%<<22
+ block%!12=1<<22
+ SYS "Wimp_SetIconState",,block%
+ENDPROC
+:
+DEF PROChideShowEnable
+ IF port%=0 OR station%=0 THEN tx_enabled%=0:grey_out%=1 ELSE grey_out%=0
+ !block%=main%
+ block%!4=i_enable%
+ block%!8=(tx_enabled%<<21)+(grey_out%<<22)
+ block%!12=(1<<21)+(1<<22)
+ SYS "Wimp_SetIconState",,block%
+ENDPROC

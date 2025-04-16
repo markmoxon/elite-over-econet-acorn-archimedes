@@ -1,0 +1,7 @@
+BASIC -load <Convert$Dir>.!RunImageT
+SAVE "!RunImage"
+*QUIT
+
+BASIC -load <Convert$Dir>.EliteNetT
+SAVE "EliteNetSc"
+*QUIT

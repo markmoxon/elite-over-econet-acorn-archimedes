@@ -1,0 +1,3 @@
+Set Convert$Dir <Obey$Dir>
+Dir <Convert$Dir>
+Run <Convert$Dir>.Converter

@@ -214,11 +214,11 @@ EliteTxInterval_SWI:
  LDR     R1, [R12, #scoreEnabled]
  TEQ     R1, #0
  BEQ     intv1
- ADR     R0, TransmitData
+ ADRL    R0, TransmitData
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
  LDR     R0, [R12, #scoreInterval]
- ADR     R1, TransmitData
+ ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
 intv1:
@@ -249,7 +249,7 @@ EliteTxStop_SWI:
  BEQ     stop1
  MOV     R0, #0
  STR     R0, [R12, #scoreEnabled]
- ADR     R0, TransmitData
+ ADRL    R0, TransmitData
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
  MOV     R0, #0
@@ -284,7 +284,7 @@ EliteTxStart_SWI:
  MOV     R0, #1
  STR     R0, [R12, #scoreEnabled]
  LDR     R0, [R12, #scoreInterval]
- ADR     R1, TransmitData
+ ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
  MOV     R0, #0
@@ -447,7 +447,7 @@ UnknownSWIError:
  ADR     R0, swiError
  MOV     R1, #0
  MOV     R2, #0
- ADR     R4, title
+ ADRL    R4, title
  SWI     XMessageTrans_ErrorLookup
  ORRS    PC, R14, #1<<28
 swiError:
@@ -636,7 +636,7 @@ TransmitData:
  ORREQ   R2, R2, #0x00000D00
  TST     R2, #0x00FF0000
  ORREQ   R2, R2, #0x000D0000
- AND     R2, R2, #0x00FFFFFF
+ BIC     R2, R2, #0xFF000000
  ORR     R2, R2, #0x0D000000
  STR     R2, [R12, #trName+4]
  MOV     R3, #1

@@ -56,6 +56,9 @@ def convert(input_file, output_file):
             # Change ALIGN to FN_AlignWithZeroes
             line = re.sub(r"ALIGN", r"OPT     FN_AlignWithZeroes", line)
 
+            # Change ADRL to FN_ADRL
+            line = re.sub(r"ADRL    R(\d+, \w+)", r"FN_ADRL(\1)", line)
+
         # Write updated line
         output_file.write(line)
 
@@ -71,7 +74,21 @@ def convert(input_file, output_file):
     output_file.write("    ]\n")
     output_file.write("   NEXT I%\n")
     output_file.write("  ENDIF\n")
-    output_file.write(" =pass%\n")
+    output_file.write(" =pass%\n\n")
+    output_file.write(" DEF FN_ADRL(reg,loc)\n")
+    output_file.write("  p%=P%\n")
+    output_file.write("  IF loc>p% THEN\n")
+    output_file.write("   [ OPT pass%\n")
+    output_file.write("     ADD reg,PC,#(loc-p%-8)DIV&100<<8\n")
+    output_file.write("     ADD reg,reg,#(loc-p%-8)MOD&100\n")
+    output_file.write("   ]\n")
+    output_file.write("  ELSE\n")
+    output_file.write("   [ OPT pass%\n")
+    output_file.write("     SUB reg,PC,#(p%+8-loc)DIV&100<<8\n")
+    output_file.write("     SUB reg,reg,#(p%+8-loc)MOD&100\n")
+    output_file.write("   ]\n")
+    output_file.write("  ENDIF\n")
+    output_file.write(' =""\n')
 
 
 print("Converting 1-source-files/EliteOverEconet.arm")
