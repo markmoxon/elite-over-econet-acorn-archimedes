@@ -592,7 +592,7 @@
 
 .EliteTxInterval_SWI
 
- TEQ     R2, #00                    \ Report an error if the interval is zero
+ TEQ     R2, #0                     \ Report an error if the interval is zero
  BEQ     intv2
 
  STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the interval in
