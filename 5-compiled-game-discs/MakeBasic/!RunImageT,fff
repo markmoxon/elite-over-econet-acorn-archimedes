@@ -28,7 +28,7 @@ DEF PROCinit
  DIM ind% 500,ind2% 200,tempname% 100,dc% &100
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
- version$="1.00 (14-Apr-2025)"
+ version$="1.00 (16-Apr-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
@@ -132,7 +132,7 @@ DEF PROCreturn_or_arrow_key
    SYS "XElite_SetStatus",2,port% TO errblk%;nzcv%
    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
   WHEN i_interval%
-   interval%=FNget_icon_value(i_interval%)*100
+   interval%=FNget_icon_value(i_interval%)
    SYS "XElite_SetStatus",6,interval% TO errblk%;nzcv%
    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
  ENDCASE
@@ -155,7 +155,7 @@ ENDPROC
 DEF PROCset_icons
  IF port%>0 THEN PROCchange_icon(block%,main%,i_port%,STR$(port%)) ELSE PROCchange_icon(block%,main%,i_port%,"")
  IF station%>0 OR network%>0 THEN PROCchange_icon(block%,main%,i_station%,FNstation_number(station%,network%)) ELSE PROCchange_icon(block%,main%,i_station%,"")
- PROCchange_icon(block%,main%,i_interval%,STR$(interval% DIV 100)+"."+STR$(interval% MOD 100))
+ PROCchange_icon(block%,main%,i_interval%,STR$(interval%))
  PROCchange_icon(block%,main%,i_kills%,STR$(kills%))
  PROCchange_icon(block%,main%,i_deaths%,STR$(deaths%))
  PROChideShowEnable

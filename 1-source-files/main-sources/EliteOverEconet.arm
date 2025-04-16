@@ -165,7 +165,7 @@
                                     \   * Non-zero = do transmit scores
 
  scoreInterval = &38                \ The interval between score transmissions
-                                    \ in centiseconds
+                                    \ in seconds
 
  stringBuffer = &3C                 \ String buffer for processing command line
                                     \ parameters (12 characters)
@@ -263,7 +263,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (14 Apr 2025)"
+ EQUS    "1.00 (16 Apr 2025)"
  EQUB    0
  ALIGN
 
@@ -592,10 +592,11 @@
 
 .EliteTxInterval_SWI
 
- CMP     R2, #100                   \ Report an error if the interval is < 100
- BLT     intv2
+ TEQ     R2, #00                    \ Report an error if the interval is zero
+ BEQ     intv2
 
- STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the new port number
+ STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the interval in
+                                    \ seconds
 
  LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
 
@@ -610,10 +611,14 @@
                                     \ the routine to the ticker list)
 
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- ADRL    R1, TransmitData           \ into the ticker event list so it gets
- MOV     R2, R12                    \ called every scoreInterval centiseconds,
- SWI     XOS_CallEvery              \ to transmit the commander data to the
-                                    \ scoreboard
+ MOV     R1, #100                   \ into the ticker event list so it gets
+ MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
+ ADRL    R1, TransmitData           \ to transmit the commander data to the
+ MOV     R2, R12                    \ scoreboard
+ SWI     XOS_CallEvery
+
+ BVS    star3                       \ If the event failed to start up, jump to
+                                    \ star3 to report this 
 
 .intv1
 
@@ -631,13 +636,13 @@
 .eliteTxIntervalError
 
  EQUD    0
- EQUS    "Invalid interval (it must be at least 100)"
+ EQUS    "Invalid interval (it must be at least 1 second)"
  EQUB    0
  ALIGN
 
 .eliteTxIntervalHelp
 
- EQUS    "*EliteTxInterval sets the interval in centiseconds "
+ EQUS    "*EliteTxInterval sets the interval in seconds "
  EQUS    "between score transmissions."
  EQUB    13
  EQUS    "Syntax: *EliteTxInterval <interval>"
@@ -746,14 +751,20 @@
  BEQ     star2                      \ If either of them is zero, jump to star2
                                     \ to report this and prevent startup
 
+ LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
+ MOV     R1, #100                   \ into the ticker event list so it gets
+ MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
+ ADRL    R1, TransmitData           \ to transmit the commander data to the
+ MOV     R2, R12                    \ scoreboard
+ SWI     XOS_CallEvery
+
+ BVS    star3                       \ If the event failed to start up, jump to
+                                    \ star3 to report this 
+
  MOV     R0, #1                     \ Set scoreEnabled = 1 to denote that score
  STR     R0, [R12, #scoreEnabled]   \ transmissions are enabled
 
- LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- ADRL    R1, TransmitData           \ into the ticker event list so it gets
- MOV     R2, R12                    \ called every scoreInterval centiseconds,
- SWI     XOS_CallEvery              \ to transmit the commander data to the
-                                    \ scoreboard
+.star0
 
  MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
 
@@ -773,6 +784,13 @@
  LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
  ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
 
+.star3
+
+ ADR     R0, eliteTxStartError3     \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORRS    PC, R14, #1<<28            \ set (in bit 28 of the program counter)
+
 .eliteTxStartError1
 
  EQUD    0
@@ -785,6 +803,13 @@
  EQUD    0
  EQUS    "Both the port and station number must be "
  EQUS    "non-zero to enable transmissions"
+ EQUB    0
+ ALIGN
+
+.eliteTxStartError3
+
+ EQUD    0
+ EQUS    "There was an error starting the transmission event"
  EQUB    0
  ALIGN
 
@@ -868,7 +893,7 @@
  SWI     XOS_ConvertCardinal4
  SWI     XOS_Write0
 
- ADR     R0, statusInterval2        \ Print " centiseconds"
+ ADR     R0, statusInterval2        \ Print " seconds"
  SWI     XOS_Write0
 
  SWI     XOS_Newline                \ Print a newline
@@ -960,7 +985,7 @@
 
 .statusInterval2
 
- EQUS    " centiseconds"
+ EQUS    " seconds"
  EQUB    0
  ALIGN
 
@@ -1283,8 +1308,8 @@
  STR     R1, [R2, #currentRank]     \ that we haven't yet fetched it from the
                                     \ game
 
- MOV     R1, #1000                  \ Initialise the transmission interval to
- STR     R1, [R2, #scoreInterval]   \ 1000 centiseconds (i.e. 10 seconds)
+ MOV     R1, #10                    \ Initialise the transmission interval to
+ STR     R1, [R2, #scoreInterval]   \ 10 seconds)
 
 .init1
 

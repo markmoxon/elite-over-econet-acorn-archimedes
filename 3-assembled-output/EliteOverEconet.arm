@@ -59,7 +59,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.00 (14 Apr 2025)"
+.byte    "1.00 (16 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -208,8 +208,8 @@ EliteTxInterval:
  TEQ     R1, #0
  BNE     intv2
 EliteTxInterval_SWI:
- CMP     R2, #100
- BLT     intv2
+ TEQ     R2, #00
+ BEQ     intv2
  STR     R2, [R12, #scoreInterval]
  LDR     R1, [R12, #scoreEnabled]
  TEQ     R1, #0
@@ -218,9 +218,12 @@ EliteTxInterval_SWI:
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
  LDR     R0, [R12, #scoreInterval]
+ MOV     R1, #100
+ MUL     R0, R1, R0
  ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
+ BVS    star3
 intv1:
  MOV     R0, #0
  LDMFD   R13!, {PC}
@@ -230,11 +233,11 @@ intv2:
  ORRS    PC, R14, #1<<28
 eliteTxIntervalError:
 .long    0
-.byte    "Invalid interval (it must be at least 100)"
+.byte    "Invalid interval (it must be at least 1 second)"
 .byte    0
 .balign 4
 eliteTxIntervalHelp:
-.byte    "*EliteTxInterval sets the interval in centiseconds "
+.byte    "*EliteTxInterval sets the interval in seconds "
 .byte    "between score transmissions."
 .byte    13
 .byte    "Syntax: *EliteTxInterval <interval>"
@@ -281,12 +284,16 @@ EliteTxStart_SWI:
  LDRNE   R2, [R12, #scoreStation]
  TEQNE   R2, #0
  BEQ     star2
- MOV     R0, #1
- STR     R0, [R12, #scoreEnabled]
  LDR     R0, [R12, #scoreInterval]
+ MOV     R1, #100
+ MUL     R0, R1, R0
  ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
+ BVS    star3
+ MOV     R0, #1
+ STR     R0, [R12, #scoreEnabled]
+star0:
  MOV     R0, #0
  LDMFD   R13!, {PC}
 star1:
@@ -295,6 +302,10 @@ star1:
  ORRS    PC, R14, #1<<28
 star2:
  ADR     R0, eliteTxStartError2
+ LDMFD   R13!, {R14}
+ ORRS    PC, R14, #1<<28
+star3:
+ ADR     R0, eliteTxStartError3
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxStartError1:
@@ -306,6 +317,11 @@ eliteTxStartError2:
 .long    0
 .byte    "Both the port and station number must be "
 .byte    "non-zero to enable transmissions"
+.byte    0
+.balign 4
+eliteTxStartError3:
+.long    0
+.byte    "There was an error starting the transmission event"
 .byte    0
 .balign 4
 eliteTxStartHelp:
@@ -412,7 +428,7 @@ statusInterval1:
 .byte    0
 .balign 4
 statusInterval2:
-.byte    " centiseconds"
+.byte    " seconds"
 .byte    0
 .balign 4
 statusStation:
@@ -550,7 +566,7 @@ InitialiseModule:
  STR     R1, [R2, #scoreEnabled]
  MVN     R1, #0
  STR     R1, [R2, #currentRank]
- MOV     R1, #1000
+ MOV     R1, #10
  STR     R1, [R2, #scoreInterval]
 init1:
  MOV     R0, #50
