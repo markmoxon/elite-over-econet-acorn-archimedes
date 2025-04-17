@@ -1262,11 +1262,12 @@
  LDR     R2, [R12]                  \ Set R2 to the module's private word
 
  TEQ     R2, #0                     \ If the private word is non-zero then we
- BNE     init1                      \ have already set up the module's private
-                                    \ workspace and the private word contains
-                                    \ the address of that workspace, so jump to
-                                    \ init1 to skip the following, with the
-                                    \ address of the workspace in R2
+ MOVNE   R12, R2                    \ have already set up the module's private
+ BNE     init1                      \ workspace and the private word contains
+                                    \ the address of that workspace, so put the
+                                    \ address of the workspace in R12 and jump
+                                    \ to init1 to the initialisation of the
+                                    \ module's workspace
 
                                     \ If we get here then the module's workspace
                                     \ has not been set up, so we do that now
@@ -1283,39 +1284,42 @@
                                     \ the module's private word to the address
                                     \ of the claimed memory
 
+ MOV     R12, R2                    \ Set R12 to the address of the claimed
+                                    \ memory
+
  MOV     R1, #0                     \ Reset the handle of the previous packet as
- STR     R1, [R2, #econetHandle]    \ there isn't one
+ STR     R1, [R12, #econetHandle]   \ there isn't one
 
- STR     R1, [R2, #netTally]        \ Zero the kill tally
+ STR     R1, [R12, #netTally]       \ Zero the kill tally
 
- STR     R1, [R2, #netDeaths]       \ Zero the death count
+ STR     R1, [R12, #netDeaths]      \ Zero the death count
 
- STR     R1, [R2, #gameIsOver]      \ Zero the gameIsOver flag to denote that
+ STR     R1, [R12, #gameIsOver]     \ Zero the gameIsOver flag to denote that
                                     \ the game is not in the process of ending
 
- STR     R1, [R2, #patchApplied]    \ Zero the patchApplied flag to denote that
+ STR     R1, [R12, #patchApplied]   \ Zero the patchApplied flag to denote that
                                     \ the game over patch has not yet been
                                     \ applied
 
- STR     R1, [R2, #scoreNetwork]    \ Zero the scoreboard network details
- STR     R1, [R2, #scoreStation]
- STR     R1, [R2, #scorePort]
+ STR     R1, [R12, #scoreNetwork]   \ Zero the scoreboard network details
+ STR     R1, [R12, #scoreStation]
+ STR     R1, [R12, #scorePort]
 
- STR     R1, [R2, #scoreEnabled]    \ Disable transmissions by default
+ STR     R1, [R12, #scoreEnabled]   \ Disable transmissions by default
 
  MVN     R1, #0                     \ Set the current rank to -1, to indicate
- STR     R1, [R2, #currentRank]     \ that we haven't yet fetched it from the
+ STR     R1, [R12, #currentRank]    \ that we haven't yet fetched it from the
                                     \ game
 
  MOV     R1, #10                    \ Initialise the transmission interval to
- STR     R1, [R2, #scoreInterval]   \ 10 seconds)
+ STR     R1, [R12, #scoreInterval]  \ 10 seconds)
 
 .init1
 
  MOV     R0, #50                    \ Add a call to the MonitorRank routine
  ADR     R1, MonitorRank            \ into the ticker event list so it gets
- SWI     XOS_CallEvery              \ called twice each second (i.e. every 50
-                                    \ centiseconds), to check the commander's
+ MOV     R2, R12                    \ called twice each second (i.e. every 50
+ SWI     XOS_CallEvery              \ centiseconds), to check the commander's
                                     \ rank for changes
                                     \
                                     \ Note that R2 contains the address of the
@@ -1327,6 +1331,34 @@
                                     \ not been added and the module can't be
                                     \ run, so return without initialising the
                                     \ module
+
+                                    \ If transmissions have already been started
+                                    \ (presumably because this module is being
+                                    \ reinitialised) then we need restart the
+                                    \ ticker event
+
+ LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
+
+ TEQ     R1, #1                     \ If transmissions have not been started, 
+ BNE     init2                      \ jump to init2 to return from the
+                                    \ subroutine
+
+ LDR     R1, [R12, #scorePort]      \ Set R1 to the port number and R2 to the
+ TEQ     R1, #0                     \ station number, setting the Z flag if
+ LDRNE   R2, [R12, #scoreStation]   \ either of them is zero
+ TEQNE   R2, #0
+
+ BEQ     init2                      \ If either of them is zero, jump to init2
+                                    \ to return from the subroutine
+
+ LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
+ MOV     R1, #100                   \ into the ticker event list so it gets
+ MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
+ ADRL    R1, TransmitData           \ transmit the commander data to the
+ MOV     R2, R12                    \ scoreboard
+ SWI     XOS_CallEvery
+
+.init2
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
