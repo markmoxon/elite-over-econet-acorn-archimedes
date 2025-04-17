@@ -77,8 +77,11 @@ DEF PROCmouse_click
    SYS "Wimp_OpenWindow",,block%
   WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_enable%
    PROCfetch_status
-   tx_enabled%=tx_enabled% EOR 1
-   SYS "XElite_SetStatus",5,tx_enabled% TO errblk%;nzcv%
+   IF tx_enabled=0 THEN
+    SYS "XElite_SetStatus",4 TO errblk%;nzcv%
+   ELSE
+    SYS "XElite_SetStatus",5 TO errblk%;nzcv%
+   ENDIF
    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
    PROCupdate_icons
   WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_reset%
@@ -87,9 +90,7 @@ DEF PROCmouse_click
    flag%=%10111
    SYS "Wimp_ReportError",eblock%,flag%,task_name$ TO ,response%
    IF response%=1 THEN
-    SYS "XElite_SetStatus",3,0 TO errblk%;nzcv%
-    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
-    SYS "XElite_SetStatus",4,0 TO errblk%;nzcv%
+    SYS "XElite_SetStatus",3 TO errblk%;nzcv%
     IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
     PROCupdate_icons
    ENDIF

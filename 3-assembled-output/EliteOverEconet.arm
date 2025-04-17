@@ -223,7 +223,7 @@ EliteTxInterval_SWI:
  ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
- BVS    star3
+ BVS     star3
 intv1:
  MOV     R0, #0
  LDMFD   R13!, {PC}
@@ -293,10 +293,9 @@ EliteTxStart_SWI:
  ADRL    R1, TransmitData
  MOV     R2, R12
  SWI     XOS_CallEvery
- BVS    star3
+ BVS     star3
  MOV     R0, #1
  STR     R0, [R12, #scoreEnabled]
-star0:
  MOV     R0, #0
  LDMFD   R13!, {PC}
 star1:
@@ -336,6 +335,7 @@ eliteTxStartHelp:
 EliteTxReset:
  STMFD   R13!, {R14}
  LDR     R12, [R12]
+EliteTxReset_SWI:
  MOV     R0, #0
  STR     R0, [R12, #netTally]
  STR     R0, [R12, #netDeaths]
@@ -516,36 +516,20 @@ SWI_Elite_GetStatus:
 SWI_Elite_SetStatus:
  STMFD   R13!, {R14}
  TEQ     R0, #1
- BNE     sets1
- MOV     R0, R1
- B       EliteTxStation_SWI
-sets1:
+ MOVEQ   R0, R1
+ BEQ     EliteTxStation_SWI
  TEQ     R0, #2
- BNE     sets2
- MOV     R2, R1
- B       EliteTxPort_SWI
-sets2:
+ MOVEQ   R2, R1
+ BEQ     EliteTxPort_SWI
  TEQ     R0, #3
- BNE     sets3
- STR     R1, [R12, #netTally]
- B       sets6
-sets3:
+ BEQ     EliteTxReset_SWI
  TEQ     R0, #4
- BNE     sets4
- STR     R1, [R12, #netDeaths]
- B       sets6
-sets4:
+ BEQ     EliteTxStart_SWI
  TEQ     R0, #5
- BNE     sets5
- TEQ     R1, #0
  BEQ     EliteTxStop_SWI
- BNE     EliteTxStart_SWI
-sets5:
  TEQ     R0, #6
- BNE     sets6
- MOV     R2, R1
- B       EliteTxInterval_SWI
-sets6:
+ MOVEQ   R2, R1
+ BEQ     EliteTxInterval_SWI
  LDMFD   R13!, {PC}^
 InitialiseModule:
  STMFD   R13!, {R14}
@@ -575,6 +559,7 @@ init1:
  MOV     R0, #50
  ADR     R1, MonitorRank
  SWI     XOS_CallEvery
+ LDMVSFD R13!, {PC}
  LDMFD   R13!, {PC}^
 FinaliseModule:
  STMFD   R13!, {R14}

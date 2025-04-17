@@ -617,7 +617,7 @@ REM ****************************************************************************
  MOV     R2, R12                    \ scoreboard
  SWI     XOS_CallEvery
 
- BVS    star3                       \ If the event failed to start up, jump to
+ BVS     star3                      \ If the event failed to start up, jump to
                                     \ star3 to report this 
 
 .intv1
@@ -764,13 +764,11 @@ REM ****************************************************************************
  MOV     R2, R12                    \ scoreboard
  SWI     XOS_CallEvery
 
- BVS    star3                       \ If the event failed to start up, jump to
+ BVS     star3                      \ If the event failed to start up, jump to
                                     \ star3 to report this 
 
  MOV     R0, #1                     \ Set scoreEnabled = 1 to denote that score
  STR     R0, [R12, #scoreEnabled]   \ transmissions are enabled
-
-.star0
 
  MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
 
@@ -834,6 +832,12 @@ REM ****************************************************************************
 \   Category; Econet
 \    Summary; Implement the EliteTxReset command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points;
+\
+\   EliteTxReset_SWI                Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxReset
@@ -842,6 +846,8 @@ REM ****************************************************************************
 
  LDR     R12, [R12]                 \ Set R12 to the address of the module's
                                     \ private workspace
+
+.EliteTxReset_SWI
 
  MOV     R0, #0                     \ Zero the kill tally and death count
  STR     R0, [R12, #netTally]
@@ -1176,80 +1182,67 @@ REM ****************************************************************************
 \   Category; Econet
 \    Summary; Code for the Elite_SetStatus SWI
 \
+\ ------------------------------------------------------------------------------
+\
+\ Implement the following SWIs;
+\
+\   SYS 'Elite_SetStatus', 1, '<net.station>'       Set station number
+\   SYS 'Elite_SetStatus', 2, <port>                Set port number
+\   SYS 'Elite_SetStatus', 3                        Reset scores
+\   SYS 'Elite_SetStatus', 4                        Start transmissions
+\   SYS 'Elite_SetStatus', 5                        Stop transmissions
+\   SYS 'Elite_SetStatus', 6, <interval>            Set interval
+\   
 \ ******************************************************************************
 
 .SWI_Elite_SetStatus
 
  STMFD   R13!, {R14}                \ Store the return address on the stack
 
- TEQ     R0, #1                     \ Check R0 to match this SYS command;
- BNE     sets1                      \ SYS 'Elite_SetStatus', 1, '<net.station>'
+ TEQ     R0, #1                     \ Test R0 to match this SYS command;
+                                    \ SYS 'Elite_SetStatus', 1, '<net.station>'
 
- MOV     R0, R1                     \ Move the argument into R0 and jump to the
- B       EliteTxStation_SWI         \ entry point in EliteTxStation to set the
+ MOVEQ   R0, R1                     \ Move the argument into R0 and jump to the
+ BEQ     EliteTxStation_SWI         \ entry point in EliteTxStation to set the
                                     \ station number and return from the
                                     \ subroutine using a tail call
 
-.sets1
+ TEQ     R0, #2                     \ Test R0 to match this SYS command;
+                                    \ SYS 'Elite_SetStatus', 2, <port>
 
- TEQ     R0, #2                     \ Check R0 to match this SYS command;
- BNE     sets2                      \ SYS 'Elite_SetStatus', 2, <port>
-
- MOV     R2, R1                     \ Move the argument into R2 and jump to the
- B       EliteTxPort_SWI            \ entry point in EliteTxPort to set the port
+ MOVEQ   R2, R1                     \ Move the argument into R2 and jump to the
+ BEQ     EliteTxPort_SWI            \ entry point in EliteTxPort to set the port
                                     \ number and return from the subroutine
                                     \ using a tail call
 
-.sets2
+ TEQ     R0, #3                     \ Test R0 to match this SYS command;
+                                    \ SYS 'Elite_SetStatus', 3
 
- TEQ     R0, #3                     \ Check R0 to match this SYS command;
- BNE     sets3                      \ SYS 'Elite_SetStatus', 3, <kills>
+ BEQ     EliteTxReset_SWI           \ Jump to the entry point in EliteTxReset to
+                                    \ reset the scores and return from the
+                                    \ subroutine using a tail call
 
- STR     R1, [R12, #netTally]       \ Update the kill tally
+ TEQ     R0, #4                     \ Test R0 to match this SYS command;
+                                    \ SYS 'Elite_SetStatus', 4
 
- B       sets6                      \ Jump to sets6 to return from the
-                                    \ subroutine
+ BEQ     EliteTxStart_SWI           \ Jump to the entry point in EliteTxStart
+                                    \ to start transmissions and return from
+                                    \ the subroutine using a tail call
 
-.sets3
+ TEQ     R0, #5                     \ Test R0 to match this SYS command;
+                                    \ SYS 'Elite_SetStatus', 5
 
- TEQ     R0, #4                     \ Check R0 to match this SYS command;
- BNE     sets4                      \ SYS 'Elite_SetStatus', 4, <deaths>
-
- STR     R1, [R12, #netDeaths]      \ Update the death count
-
- B       sets6                      \ Jump to sets6 to return from the
-                                    \ subroutine
-
-.sets4
-
- TEQ     R0, #5                     \ Check R0 to match this SYS command;
- BNE     sets5                      \ SYS 'Elite_SetStatus', 5, <enabled>
-
- TEQ     R1, #0                     \ Test the <enabled> argument in R1
-
- BEQ     EliteTxStop_SWI            \ If R1 is 0 then we are disabling
-                                    \ transmissions, so jump to the entry point
-                                    \ in EliteTxStop to stop transmissions
-                                    \ and return from the subroutine using a
-                                    \ tail call
-
- BNE     EliteTxStart_SWI           \ If R1 is 0 then we are enabling
-                                    \ transmissions, so jump to the entry point
-                                    \ in EliteTxStart to stop transmissions
-                                    \ and return from the subroutine using a
-                                    \ tail call
-
-.sets5
+ BEQ     EliteTxStop_SWI            \ Jump to the entry point in EliteTxStop
+                                    \ to stop transmissions and return from
+                                    \ the subroutine using a tail call
 
  TEQ     R0, #6                     \ Check R0 to match this SYS command;
- BNE     sets6                      \ SYS 'Elite_SetStatus', 6, <interval>
+                                    \ SYS 'Elite_SetStatus', 6, <interval>
 
- MOV     R2, R1                     \ Move the argument into R2 and jump to the
- B       EliteTxInterval_SWI        \ entry point in EliteTxInterval to set the
+ MOVEQ   R2, R1                     \ Move the argument into R2 and jump to the
+ BEQ     EliteTxInterval_SWI        \ entry point in EliteTxInterval to set the
                                     \ interval and return from the subroutine
                                     \ using a tail call
-
-.sets6
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
@@ -1282,7 +1275,7 @@ REM ****************************************************************************
  MOV     R3, #workspaceSize         \ workspace, returning the address of the
  SWI     XOS_Module                 \ workspace in R2
 
- LDMVSFD R13!, {PC}                 \ If the C flag is set then the claim has
+ LDMVSFD R13!, {PC}                 \ If the V flag is set then the claim has
                                     \ failed and the module can't be run, so
                                     \ return without initialising the module
 
@@ -1329,6 +1322,11 @@ REM ****************************************************************************
                                     \ module's private workspace, so this will
                                     \ be sent to the routine in R12 whenever it
                                     \ is called
+
+ LDMVSFD R13!, {PC}                 \ If the V flag is set then the ticker has
+                                    \ not been added and the module can't be
+                                    \ run, so return without initialising the
+                                    \ module
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
