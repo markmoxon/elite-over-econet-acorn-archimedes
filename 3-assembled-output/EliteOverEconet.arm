@@ -549,6 +549,7 @@ InitialiseModule:
  STR     R1, [R12, #netDeaths]
  STR     R1, [R12, #gameIsOver]
  STR     R1, [R12, #patchApplied]
+ STR     R1, [R12, #semaphore]
  STR     R1, [R12, #scoreNetwork]
  STR     R1, [R12, #scoreStation]
  STR     R1, [R12, #scorePort]

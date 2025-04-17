@@ -1301,6 +1301,9 @@
                                     \ the game over patch has not yet been
                                     \ applied
 
+ STR     R1, [R12, #semaphore]      \ Zero the semaphore to indicate we are not
+                                    \ currently running the event
+
  STR     R1, [R12, #scoreNetwork]   \ Zero the scoreboard network details
  STR     R1, [R12, #scoreStation]
  STR     R1, [R12, #scorePort]
