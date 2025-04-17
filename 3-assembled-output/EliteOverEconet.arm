@@ -535,31 +535,49 @@ InitialiseModule:
  STMFD   R13!, {R14}
  LDR     R2, [R12]
  TEQ     R2, #0
+ MOVNE   R12, R2
  BNE     init1
  MOV     R0, #6
  MOV     R3, #workspaceSize
  SWI     XOS_Module
  LDMVSFD R13!, {PC}
  STR     R2, [R12]
+ MOV     R12, R2
  MOV     R1, #0
- STR     R1, [R2, #econetHandle]
- STR     R1, [R2, #netTally]
- STR     R1, [R2, #netDeaths]
- STR     R1, [R2, #gameIsOver]
- STR     R1, [R2, #patchApplied]
- STR     R1, [R2, #scoreNetwork]
- STR     R1, [R2, #scoreStation]
- STR     R1, [R2, #scorePort]
- STR     R1, [R2, #scoreEnabled]
+ STR     R1, [R12, #econetHandle]
+ STR     R1, [R12, #netTally]
+ STR     R1, [R12, #netDeaths]
+ STR     R1, [R12, #gameIsOver]
+ STR     R1, [R12, #patchApplied]
+ STR     R1, [R12, #scoreNetwork]
+ STR     R1, [R12, #scoreStation]
+ STR     R1, [R12, #scorePort]
+ STR     R1, [R12, #scoreEnabled]
  MVN     R1, #0
- STR     R1, [R2, #currentRank]
+ STR     R1, [R12, #currentRank]
  MOV     R1, #10
- STR     R1, [R2, #scoreInterval]
+ STR     R1, [R12, #scoreInterval]
 init1:
  MOV     R0, #50
  ADR     R1, MonitorRank
+ MOV     R2, R12
  SWI     XOS_CallEvery
  LDMVSFD R13!, {PC}
+ LDR     R1, [R12, #scoreEnabled]
+ TEQ     R1, #1
+ BNE     init2
+ LDR     R1, [R12, #scorePort]
+ TEQ     R1, #0
+ LDRNE   R2, [R12, #scoreStation]
+ TEQNE   R2, #0
+ BEQ     init2
+ LDR     R0, [R12, #scoreInterval]
+ MOV     R1, #100
+ MUL     R0, R1, R0
+ ADRL    R1, TransmitData
+ MOV     R2, R12
+ SWI     XOS_CallEvery
+init2:
  LDMFD   R13!, {PC}^
 FinaliseModule:
  STMFD   R13!, {R14}
