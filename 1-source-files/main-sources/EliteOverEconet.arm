@@ -613,7 +613,7 @@
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  MOV     R1, #100                   \ into the ticker event list so it gets
  MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
- ADRL    R1, TransmitData           \ to transmit the commander data to the
+ ADRL    R1, TransmitData           \ transmit the commander data to the
  MOV     R2, R12                    \ scoreboard
  SWI     XOS_CallEvery
 
@@ -760,7 +760,7 @@
  LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
  MOV     R1, #100                   \ into the ticker event list so it gets
  MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
- ADRL    R1, TransmitData           \ to transmit the commander data to the
+ ADRL    R1, TransmitData           \ transmit the commander data to the
  MOV     R2, R12                    \ scoreboard
  SWI     XOS_CallEvery
 
