@@ -150,7 +150,7 @@ EliteTxPort_SWI:
  BGT     port1
  STR     R2, [R12, #scorePort]
  MOV     R0, #0
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 port1:
  ADR     R0, eliteTxPortError
  LDMFD   R13!, {R14}
@@ -181,7 +181,7 @@ EliteTxStation_SWI:
  STR     R3, [R12, #scoreNetwork]
  MOV     R0, #0
 stat1:
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 stat2:
  ADR     R0, eliteTxStationError
  LDMFD   R13!, {R14}
@@ -226,7 +226,7 @@ EliteTxInterval_SWI:
  BVS     star3
 intv1:
  MOV     R0, #0
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 intv2:
  ADR     R0, eliteTxIntervalError
  LDMFD   R13!, {R14}
@@ -256,7 +256,7 @@ EliteTxStop_SWI:
  MOV     R1, R12
  SWI     XOS_RemoveTickerEvent
  MOV     R0, #0
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 stop1:
  ADR     R0, eliteTxStopError
  LDMFD   R13!, {R14}
@@ -297,7 +297,7 @@ EliteTxStart_SWI:
  MOV     R0, #1
  STR     R0, [R12, #scoreEnabled]
  MOV     R0, #0
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 star1:
  ADR     R0, eliteTxStartError1
  LDMFD   R13!, {R14}
@@ -339,7 +339,7 @@ EliteTxReset_SWI:
  MOV     R0, #0
  STR     R0, [R12, #netTally]
  STR     R0, [R12, #netDeaths]
- LDMFD   R13!, {PC}
+ LDMFD   R13!, {PC}^
 eliteTxResetHelp:
 .byte    "*EliteTxReset resets the kill tally and death count."
 .byte    13

@@ -77,7 +77,9 @@ DEF PROCmouse_click
    SYS "Wimp_OpenWindow",,block%
   WHEN block%!12=main% AND block%!8<>2 AND block%!16=i_enable%
    PROCfetch_status
-   IF tx_enabled=0 THEN
+   IF tx_enabled%=0 THEN
+    REM OSCLI("EliteTxInterval "+STR$(interval%))
+    SYS "XElite_SetStatus",6,interval%
     SYS "XElite_SetStatus",4 TO errblk%;nzcv%
    ELSE
     SYS "XElite_SetStatus",5 TO errblk%;nzcv%

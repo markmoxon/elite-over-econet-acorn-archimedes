@@ -166,7 +166,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000164 020000CA        	   150:  BGT     port1
 00:00000168 00208CE5        	   151:  STR     R2, [R12, #scorePort]
 00:0000016C 0000A0E3        	   152:  MOV     R0, #0
-00:00000170 0080BDE8        	   153:  LDMFD   R13!, {PC}
+00:00000170 0080FDE8        	   153:  LDMFD   R13!, {PC}^
                             	   154: port1:
 00:00000174 04008FE2        	   155:  ADR     R0, eliteTxPortError
 00:00000178 0040BDE8        	   156:  LDMFD   R13!, {R14}
@@ -213,7 +213,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:0000023C 08308CE5        	   181:  STR     R3, [R12, #scoreNetwork]
 00:00000240 0000A0E3        	   182:  MOV     R0, #0
                             	   183: stat1:
-00:00000244 0080BDE8        	   184:  LDMFD   R13!, {PC}
+00:00000244 0080FDE8        	   184:  LDMFD   R13!, {PC}^
                             	   185: stat2:
 00:00000248 04008FE2        	   186:  ADR     R0, eliteTxStationError
 00:0000024C 0040BDE8        	   187:  LDMFD   R13!, {R14}
@@ -277,7 +277,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000370 7700006A        	   226:  BVS     star3
                             	   227: intv1:
 00:00000374 0000A0E3        	   228:  MOV     R0, #0
-00:00000378 0080BDE8        	   229:  LDMFD   R13!, {PC}
+00:00000378 0080FDE8        	   229:  LDMFD   R13!, {PC}^
                             	   230: intv2:
 00:0000037C 04008FE2        	   231:  ADR     R0, eliteTxIntervalError
 00:00000380 0040BDE8        	   232:  LDMFD   R13!, {R14}
@@ -324,7 +324,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000450 0C10A0E1        	   256:  MOV     R1, R12
 00:00000454 3D0002EF        	   257:  SWI     XOS_RemoveTickerEvent
 00:00000458 0000A0E3        	   258:  MOV     R0, #0
-00:0000045C 0080BDE8        	   259:  LDMFD   R13!, {PC}
+00:0000045C 0080FDE8        	   259:  LDMFD   R13!, {PC}^
                             	   260: stop1:
 00:00000460 04008FE2        	   261:  ADR     R0, eliteTxStopError
 00:00000464 0040BDE8        	   262:  LDMFD   R13!, {R14}
@@ -376,7 +376,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:0000052C 0100A0E3        	   297:  MOV     R0, #1
 00:00000530 34008CE5        	   298:  STR     R0, [R12, #scoreEnabled]
 00:00000534 0000A0E3        	   299:  MOV     R0, #0
-00:00000538 0080BDE8        	   300:  LDMFD   R13!, {PC}
+00:00000538 0080FDE8        	   300:  LDMFD   R13!, {PC}^
                             	   301: star1:
 00:0000053C 1C008FE2        	   302:  ADR     R0, eliteTxStartError1
 00:00000540 0040BDE8        	   303:  LDMFD   R13!, {R14}
@@ -443,7 +443,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:0000065C 0000A0E3        	   339:  MOV     R0, #0
 00:00000660 10008CE5        	   340:  STR     R0, [R12, #netTally]
 00:00000664 14008CE5        	   341:  STR     R0, [R12, #netDeaths]
-00:00000668 0080BDE8        	   342:  LDMFD   R13!, {PC}
+00:00000668 0080FDE8        	   342:  LDMFD   R13!, {PC}^
                             	   343: eliteTxResetHelp:
 00:0000066C 2A456C6974655478	   344: .byte    "*EliteTxReset resets the kill tally and death count."
 00:00000674 5265736574207265
