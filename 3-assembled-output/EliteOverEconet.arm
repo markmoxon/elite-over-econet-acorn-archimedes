@@ -8,6 +8,7 @@
 .set XOS_CallEvery, 0x2003C
 .set XOS_RemoveTickerEvent, 0x2003D
 .set XOS_ConvertCardinal1, 0x200D5
+.set XOS_ConvertCardinal2, 0x200D6
 .set XOS_ConvertCardinal4, 0x200D8
 .set XOS_WriteI, 0x20100
 .set XEconet_StartTransmit, 0x60006
@@ -29,10 +30,11 @@
 .set trName, 0x20
 .set trLegal, 0x28
 .set trCondition, 0x29
-.set trKill, 0x2A
+.set trKillLo, 0x2A
 .set trDeaths, 0x2B
 .set trCredits, 0x2C
 .set trMachine, 0x30
+.set trKillHi, 0x33
 .set scoreEnabled, 0x34
 .set scoreInterval, 0x38
 .set stringBuffer, 0x3C
@@ -59,7 +61,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.00 (16 Apr 2025)"
+.byte    "1.00 (21 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -402,7 +404,7 @@ EliteStatus:
  LDR     R0, [R12, #netTally]
  ADD     R1, R12, #stringBuffer
  MOV     R2, #12
- SWI     XOS_ConvertCardinal1
+ SWI     XOS_ConvertCardinal2
  SWI     XOS_Write0
  MOV     R0, #0x2F
  SWI     XOS_WriteC
@@ -498,7 +500,8 @@ SWI_Elite_GameRestart:
  BEQ     notDeath
  LDR     R2, [R12, #netDeaths]
  ADD     R2, R2, #1
- STR     R2, [R12, #netDeaths]
+ CMP     R2, #256
+ STRLT   R2, [R12, #netDeaths]
  MOV     R2, #0
  STR     R2, [R12, #gameIsOver]
 notDeath:
@@ -687,8 +690,12 @@ TransmitData:
  CMP     R2, #6
  MOVGE   R2, #0
  STRB    R2, [R12, #trCondition]
- LDRB    R2, [R12, #netTally]
- STRB    R2, [R12, #trKill]
+ MOV     R2, #4
+ STR     R2, [R12, #trMachine]
+ LDR     R2, [R12, #netTally]
+ MOV     R0, R2, LSR #8
+ STRB    R2, [R12, #trKillLo]
+ STRB    R0, [R12, #trKillHi]
  LDRB    R2, [R12, #netDeaths]
  STRB    R2, [R12, #trDeaths]
  LDR     R0, cmdrCredits
@@ -698,8 +705,6 @@ TransmitData:
  BCS     skipT
  LDR     R2, [R0]
  STR     R2, [R12, #trCredits]
- MOV     R2, #4
- STR     R2, [R12, #trMachine]
  LDR     R1, [R12, #scorePort]
  TEQ     R1, #0
  LDRNE   R2, [R12, #scoreStation]

@@ -54,8 +54,11 @@
  XOS_ConvertCardinal1 = &200D5      \ The operating system call for printing an
                                     \ unsigned integer byte
 
+ XOS_ConvertCardinal2 = &200D6      \ The operating system call for printing an
+                                    \ unsigned integer 16-bit word
+
  XOS_ConvertCardinal4 = &200D8      \ The operating system call for printing an
-                                    \ unsigned integer word
+                                    \ unsigned integer 32-bit word
 
  XOS_WriteI = &20100                \ The operating system call for printing the
                                     \ character specified in the SWI number
@@ -144,7 +147,8 @@
                                     \   * 2 = Yellow
                                     \   * 3 = Red
 
- trKill = &2A                       \ Byte #10 = commander's kill count
+ trKillLo = &2A                     \ Byte #10 = commander's kill count (low
+                                    \ byte)
 
  trDeaths = &2B                     \ Byte #11 = commander's death count
 
@@ -157,6 +161,12 @@
                                     \   * 2 = 6502SP
                                     \   * 3 = BBC Micro standard
                                     \   * 4 = Archimedes
+
+                                    \ Bytes #17 and #18 contain the forwarding
+                                    \ machine station number, if applicable
+
+ trKillHi = &33                     \ Byte #19 = commander's kill count (high
+                                    \ byte)
 
  scoreEnabled = &34                 \ Flag to control whether we transmit scores
                                     \ to the scoreboard
@@ -263,7 +273,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (16 Apr 2025)"
+ EQUS    "1.00 (21 Apr 2025)"
  EQUB    0
  ALIGN
 
@@ -951,9 +961,9 @@
  SWI     XOS_Write0
 
  LDR     R0, [R12, #netTally]       \ Print the kill tally as a positive
- ADD     R1, R12, #stringBuffer     \ integer (8-bit)
+ ADD     R1, R12, #stringBuffer     \ integer (16-bit)
  MOV     R2, #12
- SWI     XOS_ConvertCardinal1
+ SWI     XOS_ConvertCardinal2
  SWI     XOS_Write0
 
  MOV     R0, #&2F                   \ Print a /
@@ -1142,7 +1152,8 @@
 
  LDR     R2, [R12, #netDeaths]      \ Otherwise this is the title screen
  ADD     R2, R2, #1                 \ following a death, so increment the death
- STR     R2, [R12, #netDeaths]      \ count
+ CMP     R2, #256                   \ count, keeping the result within one byte
+ STRLT   R2, [R12, #netDeaths]
 
  MOV     R2, #0                     \ Zero the gameIsOver flag to denote that
  STR     R2, [R12, #gameIsOver]     \ the game is no longer in the process of
@@ -1556,8 +1567,14 @@
 
  STRB    R2, [R12, #trCondition]    \ Set byte #9 to the condition
 
- LDRB    R2, [R12, #netTally]       \ Set byte #10 to the kill tally
- STRB    R2, [R12, #trKill]
+ MOV     R2, #4                     \ Set byte #16 to machine type 4 and zero
+ STR     R2, [R12, #trMachine]      \ bytes #17 and #18 (so the forwarding
+                                    \ station bytes are clear)
+
+ LDR     R2, [R12, #netTally]       \ Set bytes #10 and #19 to the kill tally
+ MOV     R0, R2, LSR #8
+ STRB    R2, [R12, #trKillLo]
+ STRB    R0, [R12, #trKillHi]
 
  LDRB    R2, [R12, #netDeaths]      \ Set byte #10 to the death count
  STRB    R2, [R12, #trDeaths]
@@ -1570,9 +1587,6 @@
 
  LDR     R2, [R0]                   \ Set bytes #12-15 to the commander credits
  STR     R2, [R12, #trCredits]
-
- MOV     R2, #4                     \ Set byte #16 to machine type 4
- STR     R2, [R12, #trMachine]
 
                                     \ We now check to see if the transmission
                                     \ is correctly configured
