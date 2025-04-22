@@ -8,21 +8,21 @@ This repository contains source code for the !EliteNet application for the Acorn
 
 The [Elite over Econet](https://github.com/markmoxon/elite-over-econet) project enables you to load BBC Micro Elite over an Acorn network. It also provides multiplayer scoreboard support, so you can run live Elite competitions over the network. For more information, see the [bbcelite.com website](https://elite.bbcelite.com/hacks/elite_over_econet.html).
 
-Archimedes Elite already supports Econet. The !EliteNet application provided here simply adds multiplayer scoreboard support; the game itself is completely untouched. For this to work you need to be running version 1.14 of Archimedes Elite, which you can [download from Ian Bell's personal website](http://www.elitehomepage.org/archive/a/b5052410.arc). For instructions on how to use !EliteNet, click Menu on the application and choose Help from the App. '!EliteNet' submenu.
+Archimedes Elite already supports loading over Econet. The !EliteNet application provided here simply adds multiplayer scoreboard support; the game itself is completely untouched. For this to work you need to be running version 1.14 of Archimedes Elite, which you can [download from Ian Bell's personal website](http://www.elitehomepage.org/archive/a/b5052410.arc). For instructions on how to use !EliteNet, click Menu on the application in the Filer and choose `Help` from the `App. '!EliteNet'` submenu.
 
-Note that the final build does not contain the !EliteNet.!RunImage or !EliteNet.WimpLib BASIC programs, as these need to be tokenised. The MakeBasic folder contains a script that can be run on an Archimedes to produce the final piece of the puzzle. MakeBasic also contains the BASIC source for the EliteScoreboard module, so that can also be built on an Archimedes if required.
+Note that the final build does not contain the `!EliteNet.!RunImage` or `!EliteNet.WimpLib` BASIC programs, as the sources are text files and need to be converted into tokenised BBC BASIC. The MakeBasic folder produced by the build process contains a script that can be run on an Archimedes to produce the final pieces of the puzzle. MakeBasic also contains the BASIC source for the EliteScoreboard module, so that can be built on an Archimedes if required.
 
 ## Acknowledgements
 
 Archimedes Elite was written by Warren Burch and Clive Gringras and is copyright &copy; Hybrid Technology 1991.
 
-!EliteNet is copyright &copy; Mark Moxon. Any misunderstandings or mistakes in the documentation are entirely my fault.
+!EliteNet is copyright &copy; Mark Moxon and has been released under the MIT licence.
 
 ## Building !EliteNet from the source
 
 Builds are supported for Windows and Mac/Linux systems. In all cases the build process is defined in the `Makefile` provided.
 
-The build process also creates a version of the source that can be built on [Archimedes][#archimedes] machines.
+The build process also creates a version of the module source that can be built on [Archimedes](#archimedes) machines.
 
 ### Requirements
 
@@ -46,9 +46,9 @@ All being well, entering the following into a command window:
 make.bat
 ```
 
-will produce folders called `!EliteNet` and `MakeBasic` in the `5-compiled-game-discs` folder, which contain the !EliteNet application and BBC BASIC sources as test files. It also produces the `Max,c87` commander file, and a zip file called `EliteNet.zip` that contains everything in one archive. Note that these zips and folders do not contain RISC OS filetype metadata; filetypes are included as filename suffixes, so they will work with HostFS.
+will produce folders called `!EliteNet` and `MakeBasic` in the `5-compiled-game-discs` folder, which contain the skeleton !EliteNet application and BBC BASIC sources as text files. It also produces the `Max,c87` commander file, and a zip file called `EliteNet.zip` that contains everything in one archive. Note that these zips and folders do not contain RISC OS filetype metadata; filetypes are included as filename suffixes, so they will work with HostFS.
 
-To complete the build, you will need to tokenise the BASIC files, as described in the Archimedes section below.
+To complete the build, you will need to tokenise the BASIC files, as described in the [Archimedes](#archimedes) section below.
 
 ### Mac and Linux
 
@@ -60,25 +60,25 @@ All being well, entering the following into a terminal window:
 make
 ```
 
-will produce folders called `!EliteNet` and `MakeBasic` in the `5-compiled-game-discs` folder, which contain the !EliteNet application and BBC BASIC sources as test files. It also produces the `Max,c87` commander file, and a zip file called `EliteNet.zip` that contains everything in one archive. Note that these zips and folders do not contain RISC OS filetype metadata; filetypes are included as filename suffixes, so they will work with HostFS.
+will produce folders called `!EliteNet` and `MakeBasic` in the `5-compiled-game-discs` folder, which contain the skeleton !EliteNet application and BBC BASIC sources as text files. It also produces the `Max,c87` commander file, and a zip file called `EliteNet.zip` that contains everything in one archive. Note that these zips and folders do not contain RISC OS filetype metadata; filetypes are included as filename suffixes, so they will work with HostFS.
 
-To complete the build, you will need to tokenise the BASIC files, as described in the Archimedes section below.
+To complete the build, you will need to tokenise the BASIC files, as described in the [Archimedes](#archimedes) section below.
 
 ### Archimedes
 
-The build process outlined above produces a RISC OS application called `!EliteNet` in the `5-compiled-game-discs` folder, and a folder called `MakeBasic`. The latter contains BBC BASIC sources that need to be tokenised on an Archimedes, and it also contains a version of the EliteOverEconet module source that can be built on an Archimedes.
+The build process outlined above produces a skeleton RISC OS application folder called `!EliteNet` in the `5-compiled-game-discs` folder, and another folder called `MakeBasic`. The latter contains text files containing the BBC BASIC sources that need to be tokenised on an Archimedes, and it also contains a version of the EliteOverEconet module source code that can be built on an Archimedes.
 
 To finish building the application, do the following:
 
-* Copy the `!EliteNet` and `MakeBasic` folders to an Archimedes, along with the `Max,c87` commander file.
+* Copy the `!EliteNet` and `MakeBasic` folders to an Archimedes, along with the `Max,c87` commander file. You can either copy the files individually or use the zip file. The filenames are designed to be copied using HostFS, and contain the filetypes as ,xxx suffixes.
 
 * Open the `MakeBasic` folder in RISC OS and double-click on the `!Convert` file. Press any key to close the window that pops up. The `MakeBasic` folder will now contain the following BBC BASIC files: `!RunImage`, `WimpLib` and `EliteNetSc`.
 
 * Open the application folder by double-clicking on the `!EliteNet` folder while holding down Shift, and copy `!RunImage` and `WimpLib` in here.
 
-The !EliteNet application is now complete and can be run. For instructions on how to use !EliteNet, click Menu on the application and choose Help from the App. '!EliteNet' submenu.
+The !EliteNet application is now complete and can be run. For instructions on how to use !EliteNet, click Menu on the application in the Filer and choose `Help` from the `App. '!EliteNet'` submenu.
 
-The `EliteNetSc` program contains the source for the EliteOverEconet module. The build process already builds the module using vasm, but the source is also provided as a BBC BASIC program that you can run on an Archimedes to produce the same module. Note that if you do build the module on an Archimedes, it will differ slightly from the vasm version, as vasm implements the ADRL directive differently to the macro in the BBC BASIC source code. The resulting module behaves identically, though.
+The `EliteNetSc` program contains the source for the EliteOverEconet module. The build process already builds the module using vasm, but the source is also provided as a BBC BASIC program that you can run on an Archimedes to produce the same module. Note that if you do build the module on an Archimedes, the resulting binary may differ slightly from the vasm version, as vasm implements the ADRL directive differently to the macro used in the BBC BASIC source code. The resulting module will behave identically, though.
 
 ### Verifying the output
 
