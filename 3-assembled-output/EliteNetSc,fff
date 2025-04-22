@@ -273,7 +273,7 @@ REM ****************************************************************************
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (21 Apr 2025)"
+ EQUS    "1.00 (22 Apr 2025)"
  EQUB    0
  OPT     FN_AlignWithZeroes
 

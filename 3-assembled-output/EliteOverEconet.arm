@@ -61,7 +61,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.00 (21 Apr 2025)"
+.byte    "1.00 (22 Apr 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:

@@ -28,7 +28,7 @@ DEF PROCinit
  DIM ind% 500,ind2% 200,tempname% 100,dc% &100
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
- version$="1.00 (21-Apr-2025)"
+ version$="1.00 (22-Apr-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
@@ -127,21 +127,24 @@ DEF PROCreturn_or_arrow_key
   WHEN i_station%
    stn$=FNget_icon_string(i_station%)
    SYS "XElite_SetStatus",1,block%!28 TO errblk%;nzcv%
-   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)) ELSE PROCsetCaret(i%)
   WHEN i_port%
    port%=FNget_icon_value(i_port%)
    SYS "XElite_SetStatus",2,port% TO errblk%;nzcv%
-   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)) ELSE PROCsetCaret(i%)
   WHEN i_interval%
    interval%=FNget_icon_value(i_interval%)
    SYS "XElite_SetStatus",6,interval% TO errblk%;nzcv%
-   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4))
+   IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)) ELSE PROCsetCaret(i%)
  ENDCASE
+ENDPROC
+:
+DEF PROCsetCaret(ic%)
  PROCupdate_icons
  !block%=main%
- block%!4=i%
+ block%!4=ic%
  SYS "Wimp_GetIconState",,block%
- SYS "Wimp_SetCaretPosition",main%,i%,,,-1,LEN($(block%!28))
+ SYS "Wimp_SetCaretPosition",main%,ic%,,,-1,LEN($(block%!28))
 ENDPROC
 :
 DEF PROCfetch_status
