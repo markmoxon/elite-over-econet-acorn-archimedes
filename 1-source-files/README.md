@@ -2,9 +2,9 @@
 
 This folder contains the source files for Elite over Econet on the Acorn Archimedes.
 
-* [other-sources](other-sources) contains BASIC programs and RISC OS application files to include on the final disc
+* [main-sources](main-sources) contains the source code for the EliteScoreboard module and !EliteNet application
 
-* [main-sources](main-sources) contains the annotated source code
+* [other-sources](other-sources) contains BASIC programs and RISC OS application files to include on the final disc
 
 ---
 

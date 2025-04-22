@@ -8,8 +8,6 @@ This folder contains support scripts for building Elite over Econet on the Acorn
 
 * [crc32.py](crc32.py) calculates checksums during the verify stage and compares the results with the relevant binaries in the [4-reference-binaries](../4-reference-binaries) folder
 
-* [export-symbols.py](convert-to-vasm.py) extracts symbol values from the vasm output so they can be included in other sources
-
 It also contains the `make.exe` executable for Windows, plus the required DLL files.
 
 ---

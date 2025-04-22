@@ -2,7 +2,7 @@
 
 This folder contains the binaries for Elite over Econet on the Acorn Archimedes.
 
-* [Scoreboard.bin](Scoreboard.bin) contains the relocatable module
+* [EliteNet.bin](EliteNet.bin) contains the EliteOverEconet module
 
 ---
 
