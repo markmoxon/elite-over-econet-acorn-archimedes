@@ -4,11 +4,11 @@
 
 ![Screenshot of the !EliteNet application](https://elite.bbcelite.com/images/elite_over_econet/elitenet.png)
 
-This repository contains source code for the !EliteNet application for the Acorn Archimedes, which allows players of Archimedes Elite to send scores to multiplayer scoreboards as part of Elite over Econet.
+This repository contains source code for the !EliteNet application for the Acorn Archimedes, which allows players of Archimedes Elite to send scores to multiplayer scoreboards over Econet. It also contains the source code for the EliteOverEconet module that does the actual transmissions.
 
-Elite over Econet enables you to load Elite over an Acorn network. It also provides multiplayer scoreboard support, so you can run live Elite competitions over the network. For more information, see the [bbcelite.com website](https://elite.bbcelite.com/hacks/elite_over_econet.html).
+The [Elite over Econet](https://github.com/markmoxon/elite-over-econet) project enables you to load BBC Micro Elite over an Acorn network. It also provides multiplayer scoreboard support, so you can run live Elite competitions over the network. For more information, see the [bbcelite.com website](https://elite.bbcelite.com/hacks/elite_over_econet.html).
 
-This repository contains the source code for the !EliteNet application. For instructions on how to use !EliteNet, click Menu on the application and choose Help from the App. '!EliteNet' submenu.
+Archimedes Elite already supports Econet. The !EliteNet application provided here simply adds multiplayer scoreboard support; the game itself is completely untouched. For this to work you need to be running version 1.14 of Archimedes Elite, which you can [download from Ian Bell's personal website](http://www.elitehomepage.org/archive/a/b5052410.arc). For instructions on how to use !EliteNet, click Menu on the application and choose Help from the App. '!EliteNet' submenu.
 
 Note that the final build does not contain the !EliteNet.!RunImage or !EliteNet.WimpLib BASIC programs, as these need to be tokenised. The MakeBasic folder contains a script that can be run on an Archimedes to produce the final piece of the puzzle. MakeBasic also contains the BASIC source for the EliteScoreboard module, so that can also be built on an Archimedes if required.
 
@@ -16,25 +16,7 @@ Note that the final build does not contain the !EliteNet.!RunImage or !EliteNet.
 
 Archimedes Elite was written by Warren Burch and Clive Gringras and is copyright &copy; Hybrid Technology 1991.
 
-The commentary is copyright &copy; Mark Moxon. Any misunderstandings or mistakes in the documentation are entirely my fault.
-
-Huge thanks are due to the original authors for not only creating such an important piece of my childhood, but also for releasing the source code for us to play with; to Paul Brink for his annotated disassembly; and to Kieran Connell for his [BeebAsm version](https://github.com/kieranhj/elite-beebasm), which I forked as the original basis for this project. You can find more information about this project in the [accompanying website's project page](https://elite.bbcelite.com/about_site/about_this_project.html).
-
-The following archives from Ian Bell's personal website form the basis for this project:
-
-* [Archimedes Elite](http://www.elitehomepage.org/archive/a/b5052410.arc)
-
-### A note on licences, copyright etc.
-
-This repository is _not_ provided with a licence, and there is intentionally no `LICENSE` file provided.
-
-According to [GitHub's licensing documentation](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/licensing-a-repository), this means that "the default copyright laws apply, meaning that you retain all rights to your source code and no one may reproduce, distribute, or create derivative works from your work".
-
-The reason for this is that Elite over Econet is intertwined with the original Elite source code, and the original source code is copyright. The whole site is therefore covered by default copyright law, to ensure that this copyright is respected.
-
-Under GitHub's rules, you have the right to read and fork this repository... but that's it. No other use is permitted, I'm afraid.
-
-My hope is that the educational and non-profit intentions of this repository will enable it to stay hosted and available, but the original copyright holders do have the right to ask for it to be taken down, in which case I will comply without hesitation. I do hope, though, that along with the various other disassemblies and commentaries of this source, it will remain viable.
+!EliteNet is copyright &copy; Mark Moxon. Any misunderstandings or mistakes in the documentation are entirely my fault.
 
 ## Building !EliteNet from the source
 
