@@ -7,4 +7,36 @@ to an Econet scoreboard.
 It needs version 1.14 of Elite (available from Ian
 Bell's website) and a working Econet connection.
 
-See www.bbcelite.com/hacks for details.
+To send scores to a scoreboard, run both Elite and
+!EliteNet. Click on the EliteNet icon to bring up
+the configuration window, and enter the station and
+port number for the scoreboard.
+
+You can move to the next field by pressing Return
+or Tab, and you can use the up/down arrow keys to
+move both ways.
+
+Note that in order for a value to be configured,
+you need to press either Return, Tab or an arrow
+key so the value can be submitted and checked.
+
+Once the details have been configured, the "Enable
+scoreboard transmissions" icon will be available.
+You can use this to turn transmissions on and off.
+
+Transmissions only occur when Elite is running and
+you are in the game. You can optionally change the
+transmission interval, but don't make it too short
+for too long, especially on a busy network.
+
+To set the scores back to zero, click the Reset
+button. You might want to do this before a new
+muliplayer competition starts, so everyone begins
+from the same position.
+
+This application comes with a maxed-out commander
+file called Max. This matches the MAX commander
+that comes with the BBC Micro version of Elite
+over Econet.
+
+See bbcelite.com/econet for more details.
