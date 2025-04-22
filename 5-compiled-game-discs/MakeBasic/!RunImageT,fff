@@ -108,7 +108,7 @@ ENDPROC
 DEF PROCkey_pressed
  IF !block%=main% THEN
   CASE block%!24 OF
-   WHEN 13,&18E
+   WHEN 13,&18E,&18A
     IF block%!4=i_interval% THEN i%=i_station% ELSE i%=block%!4+1
     PROCreturn_or_arrow_key
    WHEN &18F
