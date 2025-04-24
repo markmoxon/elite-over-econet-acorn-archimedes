@@ -1776,7 +1776,6 @@
 
  MOV     PC, R14                    \ Return from the subroutine
 
-
 \ ******************************************************************************
 \
 \       Name: Archimedes Elite addresses (version 1.14)
