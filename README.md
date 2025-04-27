@@ -6,7 +6,7 @@
 
 This repository contains source code for the !EliteNet application for the Acorn Archimedes, which allows players of Archimedes Elite to send scores to multiplayer scoreboards over Econet. It also contains the source code for the EliteOverEconet module that does the actual transmissions.
 
-The [Elite over Econet](https://github.com/markmoxon/elite-over-econet) project enables you to load BBC Micro Elite over an Acorn network. It also provides multiplayer scoreboard support, so you can run live Elite competitions over the network. For more information, see the [bbcelite.com website](https://elite.bbcelite.com/hacks/elite_over_econet.html).
+The [Elite over Econet](https://github.com/markmoxon/elite-over-econet) project enables you to load BBC Micro Elite over an Acorn network. It also provides multiplayer scoreboard support, so you can run live Elite competitions over the network. For more information, see the [bbcelite.com website](https://elite.bbcelite.com/hacks/elite_over_econet.html), where you can also [download the fully built !EliteNet application](https://elite.bbcelite.com/hacks/elite_over_econet_installing.html).
 
 Archimedes Elite already supports loading over Econet. The !EliteNet application provided here simply adds multiplayer scoreboard support; the game itself is completely untouched. For this to work you need to be running version 1.14 of Archimedes Elite, which you can [download from Ian Bell's personal website](http://www.elitehomepage.org/archive/a/b5052410.arc). For instructions on how to use !EliteNet, click Menu on the application in the Filer and choose `Help` from the `App. '!EliteNet'` submenu.
 
