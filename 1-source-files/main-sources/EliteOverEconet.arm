@@ -1067,6 +1067,15 @@
 
  B       SWI_Elite_SetStatus        \ Jump to SWI 3 within this chunk
 
+\ ******************************************************************************
+\
+\       Name: UnknownSWIError
+\       Type: Subroutine
+\   Category: Econet
+\    Summary: Return the unknown SWI error
+\
+\ ******************************************************************************
+
 .UnknownSWIError
 
  ADR     R0, swiError               \ Transform the error message token in
@@ -1078,6 +1087,15 @@
  ORRS    PC, R14, #1<<28            \ Return from the subroutine with the V flag
                                     \ set (in bit 28 of the program counter)
 
+\ ******************************************************************************
+\
+\       Name: swiError
+\       Type: Variable
+\   Category: Econet
+\    Summary: Error block for the unknown SWI error
+\
+\ ******************************************************************************
+
 .swiError
 
  EQUD    &1E6
@@ -1088,7 +1106,7 @@
 \ ******************************************************************************
 \
 \       Name: swiDecodingTable
-\       Type: Subroutine
+\       Type: Variable
 \   Category: Econet
 \    Summary: Decoding table for the Elite_GameOver and Elite_GameRestart SWIs
 \
