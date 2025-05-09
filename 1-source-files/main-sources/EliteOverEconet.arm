@@ -273,7 +273,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.00 (27 Apr 2025)"
+ EQUS    "1.01 (09 May 2025)"
  EQUB    0
  ALIGN
 
@@ -1469,37 +1469,43 @@
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
- LDR     R0, string1Addr            \ Check to see if the first string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string1Addr            \ Check to see if the first string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
 
  LDR     R0, [R0]                   \ If the first string doesn't match, jump
- LDR     R1, string1Match           \ to skipT to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+ ADR     R1, string1Match           \ to skipT to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipT
 
- LDR     R0, string2Addr            \ Check to see if the second string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string2Addr            \ Check to see if the second string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
 
  LDR     R0, [R0]                   \ If the second string doesn't match, jump
- LDR     R1, string2Match           \ to skipT to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+ ADR     R1, string2Match           \ to skipT to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipT
 
- LDR     R0, string3Addr            \ Check to see if the third string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string3Addr            \ Check to see if the third string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
 
  LDR     R0, [R0]                   \ If the third string doesn't match, jump
- LDR     R1, string3Match           \ to skipT to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+ ADR     R1, string3Match           \ to skipT to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipT
 
                                     \ If we get here then Elite is paged in
@@ -1520,8 +1526,9 @@
  SWINE   XEconet_AbandonTransmit    \ transmission to recover its memory from
                                     \ the RMA
 
- LDR     R0, cmdrName               \ Check to see if the commander name is in
- ADD     R1, R0, #4                 \ logical RAM
+ ADR     R0, cmdrName               \ Check to see if the commander name is in
+ LDR     R0, [R0]                   \ logical RAM
+ ADD     R1, R0, #4
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
@@ -1550,8 +1557,9 @@
 
  MOV     R3, #1                     \ Set R3 to 1 (for Offender)
 
- LDR     R0, cmdrLegal              \ Check to see if the commander's legal
- MOV     R1, R0                     \ status is in logical RAM
+ ADR     R0, cmdrLegal              \ Check to see if the commander's legal
+ LDR     R0, [R0]                   \ status is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
@@ -1566,8 +1574,9 @@
 
  STRB    R3, [R12, #trLegal]        \ Set byte #8 to the legal status
 
- LDR     R0, cmdrCondition          \ Check to see if the commander's condition
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, cmdrCondition          \ Check to see if the commander's condition
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
@@ -1597,8 +1606,9 @@
  LDRB    R2, [R12, #netDeaths]      \ Set byte #10 to the death count
  STRB    R2, [R12, #trDeaths]
 
- LDR     R0, cmdrCredits            \ Check to see if the commander credits are
- MOV     R1, R0                     \ in logical RAM
+ ADR     R0, cmdrCredits            \ Check to see if the commander credits are
+ LDR     R0, [R0]                   \ in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
@@ -1699,37 +1709,43 @@
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
- LDR     R0, string1Addr            \ Check to see if the first string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string1Addr            \ Check to see if the first string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
 
- LDR     R0, [R0]                   \ If the first string doesn't match, jump
- LDR     R1, string1Match           \ to skipM to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+  LDR     R0, [R0]                   \ If the first string doesn't match, jump
+ ADR     R1, string1Match           \ to skipM to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipM
 
- LDR     R0, string2Addr            \ Check to see if the second string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string2Addr            \ Check to see if the second string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
 
  LDR     R0, [R0]                   \ If the second string doesn't match, jump
- LDR     R1, string2Match           \ to skipM to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+ ADR     R1, string2Match           \ to skipM to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipM
 
- LDR     R0, string3Addr            \ Check to see if the third string to match
- MOV     R1, R0                     \ is in logical RAM
+ ADR     R0, string3Addr            \ Check to see if the third string to match
+ LDR     R0, [R0]                   \ is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
 
  LDR     R0, [R0]                   \ If the third string doesn't match, jump
- LDR     R1, string3Match           \ to skipM to return from the subroutine as
- CMP     R0, R1                     \ Elite is not paged in
+ ADR     R1, string3Match           \ to skipM to return from the subroutine as
+ LDR     R1, [R1]                   \ Elite is not paged in
+ CMP     R0, R1
  BNE     skipM
 
                                     \ If we get here then Elite is paged in
@@ -1739,20 +1755,24 @@
  TEQ     R1, #1                     \ If R1 = 1 then we have already applied the
  BEQ     skipP                      \ patch, so skip the following
 
- LDR     R0, gameOverAddr           \ Deploy the first GAME OVER patch if the
- MOV     R1, R0                     \ address is in logical RAM
+ ADR     R0, gameOverAddr           \ Deploy the first GAME OVER patch if the
+ LDR     R0, [R0]                   \ address is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
- LDR     R1, gameOverPatch
+ ADR     R1, gameOverPatch
+ LDR     R1, [R1]
  STR     R1, [R0]
 
- LDR     R0, restartAddr            \ Deploy the second GAME OVER patch if the
- MOV     R1, R0                     \ address is in logical RAM
+ ADR     R0, restartAddr            \ Deploy the second GAME OVER patch if the
+ LDR     R0, [R0]                   \ address is in logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
- LDR     R1, restartPatch
+ ADR     R1, restartPatch
+ LDR     R1, [R1]
  STR     R1, [R0]
 
  MOV     R1, #1                     \ Set the patchApplied flag to 1 to denote
@@ -1760,8 +1780,9 @@
 
 .skipP
 
- LDR     R0, cmdrRank               \ Check to see if the commander's rank is in
- MOV     R1, R0                     \ logical RAM
+ ADR     R0, cmdrRank               \ Check to see if the commander's rank is in
+ LDR     R0, [R0]                   \ logical RAM
+ MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM

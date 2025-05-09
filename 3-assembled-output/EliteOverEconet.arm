@@ -61,7 +61,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.00 (27 Apr 2025)"
+.byte    "1.01 (09 May 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -605,31 +605,37 @@ TransmitData:
  TEQP    R4, #3
  MOV     R0, R0
  STMFD   R13!, {R5, R14}
- LDR     R0, string1Addr
+ ADR     R0, string1Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
  LDR     R0, [R0]
- LDR     R1, string1Match
+ ADR     R1, string1Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipT
- LDR     R0, string2Addr
+ ADR     R0, string2Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
  LDR     R0, [R0]
- LDR     R1, string2Match
+ ADR     R1, string2Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipT
- LDR     R0, string3Addr
+ ADR     R0, string3Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
  LDR     R0, [R0]
- LDR     R1, string3Match
+ ADR     R1, string3Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipT
  LDR     R0, [R12, #semaphore]
@@ -640,7 +646,8 @@ TransmitData:
  LDR     R0, [R12, #econetHandle]
  TEQ     R0, #0
  SWINE   XEconet_AbandonTransmit
- LDR     R0, cmdrName
+ ADR     R0, cmdrName
+ LDR     R0, [R0]
  ADD     R1, R0, #4
  SWI     XOS_ValidateAddress
  BVS     skipT
@@ -666,7 +673,8 @@ TransmitData:
  ORR     R2, R2, #0x0D000000
  STR     R2, [R12, #trName+4]
  MOV     R3, #1
- LDR     R0, cmdrLegal
+ ADR     R0, cmdrLegal
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
@@ -677,7 +685,8 @@ TransmitData:
  CMP     R2, #0x3E8
  MOVGT   R3, #3
  STRB    R3, [R12, #trLegal]
- LDR     R0, cmdrCondition
+ ADR     R0, cmdrCondition
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
@@ -698,7 +707,8 @@ TransmitData:
  STRB    R0, [R12, #trKillHi]
  LDRB    R2, [R12, #netDeaths]
  STRB    R2, [R12, #trDeaths]
- LDR     R0, cmdrCredits
+ ADR     R0, cmdrCredits
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipT
@@ -735,54 +745,65 @@ MonitorRank:
  TEQP    R4, #3
  MOV     R0, R0
  STMFD   R13!, {R5, R14}
- LDR     R0, string1Addr
+ ADR     R0, string1Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
- LDR     R0, [R0]
- LDR     R1, string1Match
+  LDR     R0, [R0]
+ ADR     R1, string1Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipM
- LDR     R0, string2Addr
+ ADR     R0, string2Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
  LDR     R0, [R0]
- LDR     R1, string2Match
+ ADR     R1, string2Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipM
- LDR     R0, string3Addr
+ ADR     R0, string3Addr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
  LDR     R0, [R0]
- LDR     R1, string3Match
+ ADR     R1, string3Match
+ LDR     R1, [R1]
  CMP     R0, R1
  BNE     skipM
  LDR     R1, [R12, #patchApplied]
  TEQ     R1, #1
  BEQ     skipP
- LDR     R0, gameOverAddr
+ ADR     R0, gameOverAddr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
- LDR     R1, gameOverPatch
+ ADR     R1, gameOverPatch
+ LDR     R1, [R1]
  STR     R1, [R0]
- LDR     R0, restartAddr
+ ADR     R0, restartAddr
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
- LDR     R1, restartPatch
+ ADR     R1, restartPatch
+ LDR     R1, [R1]
  STR     R1, [R0]
  MOV     R1, #1
  STR     R1, [R12, #patchApplied]
 skipP:
- LDR     R0, cmdrRank
+ ADR     R0, cmdrRank
+ LDR     R0, [R0]
  MOV     R1, R0
  SWI     XOS_ValidateAddress
  BVS     skipM
