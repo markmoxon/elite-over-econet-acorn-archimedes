@@ -174,7 +174,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000178 0040BDE8        	   158:  LDMFD   R13!, {R14}
 00:0000017C 01F29EE3        	   159:  ORRS    PC, R14, #1<<28
                             	   160: eliteTxPortError:
-00:00000180 00000000        	   161: .long    0
+00:00000180 FF000000        	   161: .long    255
 00:00000184 496E76616C696420	   162: .byte    "Invalid port number (it must be in the range 1 to 254)"
 00:0000018C 706F7274206E756D
 00:00000194 6265722028697420
@@ -221,7 +221,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:0000024C 0040BDE8        	   189:  LDMFD   R13!, {R14}
 00:00000250 01F29EE3        	   190:  ORRS    PC, R14, #1<<28
                             	   191: eliteTxStationError:
-00:00000254 00000000        	   192: .long    0
+00:00000254 FF000000        	   192: .long    255
 00:00000258 496E76616C696420	   193: .byte    "Invalid station (it must be in the format 123 or 1.234)"
 00:00000260 73746174696F6E20
 00:00000268 286974206D757374
@@ -285,7 +285,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000380 0040BDE8        	   234:  LDMFD   R13!, {R14}
 00:00000384 01F29EE3        	   235:  ORRS    PC, R14, #1<<28
                             	   236: eliteTxIntervalError:
-00:00000388 00000000        	   237: .long    0
+00:00000388 FF000000        	   237: .long    255
 00:0000038C 496E76616C696420	   238: .byte    "Invalid interval (it must be at least 1 second)"
 00:00000394 696E74657276616C
 00:0000039C 20286974206D7573
@@ -332,7 +332,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000464 0040BDE8        	   264:  LDMFD   R13!, {R14}
 00:00000468 01F29EE3        	   265:  ORRS    PC, R14, #1<<28
                             	   266: eliteTxStopError:
-00:0000046C 00000000        	   267: .long    0
+00:0000046C FF000000        	   267: .long    255
 00:00000470 5472616E736D6973	   268: .byte    "Transmissions are already disabled"
 00:00000478 73696F6E73206172
 00:00000480 6520616C72656164
@@ -392,7 +392,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000558 0040BDE8        	   313:  LDMFD   R13!, {R14}
 00:0000055C 01F29EE3        	   314:  ORRS    PC, R14, #1<<28
                             	   315: eliteTxStartError1:
-00:00000560 00000000        	   316: .long    0
+00:00000560 FF000000        	   316: .long    255
 00:00000564 5472616E736D6973	   317: .byte    "Transmissions are already enabled"
 00:0000056C 73696F6E73206172
 00:00000574 6520616C72656164
@@ -401,7 +401,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000585 00              	   318: .byte    0
                             	   319: .balign 4
                             	   320: eliteTxStartError2:
-00:00000588 00000000        	   321: .long    0
+00:00000588 FF000000        	   321: .long    255
 00:0000058C 426F746820746865	   322: .byte    "Both the port and station number must be "
 00:00000594 20706F727420616E
 00:0000059C 642073746174696F
@@ -415,7 +415,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:000005D5 00              	   324: .byte    0
                             	   325: .balign 4
                             	   326: eliteTxStartError3:
-00:000005D8 00000000        	   327: .long    0
+00:000005D8 FF000000        	   327: .long    255
 00:000005DC 5468657265207761	   328: .byte    "There was an error starting the transmission event"
 00:000005E4 7320616E20657272
 00:000005EC 6F72207374617274
@@ -893,7 +893,7 @@ Source: "3-assembled-output/EliteOverEconet.arm"
 00:00000D3C 3A0002EF        	   751:  SWI     XOS_ValidateAddress
 00:00000D40 4100006A        	   752:  BVS     skipM
 00:00000D44 4000002A        	   753:  BCS     skipM
-00:00000D48 000090E5        	   754:   LDR     R0, [R0]
+00:00000D48 000090E5        	   754:  LDR     R0, [R0]
 00:00000D4C 491F8FE2        	   755:  ADR     R1, string1Match
 00:00000D50 001091E5        	   756:  LDR     R1, [R1]
 00:00000D54 010050E1        	   757:  CMP     R0, R1

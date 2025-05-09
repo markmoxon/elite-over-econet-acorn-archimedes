@@ -484,7 +484,7 @@
 
 .eliteTxPortError
 
- EQUD    0
+ EQUD    255
  EQUS    "Invalid port number (it must be in the range 1 to 254)"
  EQUB    0
  ALIGN
@@ -553,7 +553,7 @@
 
 .eliteTxStationError
 
- EQUD    0
+ EQUD    255
  EQUS    "Invalid station (it must be in the format 123 or 1.234)"
  EQUB    0
  ALIGN
@@ -645,7 +645,7 @@
 
 .eliteTxIntervalError
 
- EQUD    0
+ EQUD    255
  EQUS    "Invalid interval (it must be at least 1 second)"
  EQUB    0
  ALIGN
@@ -711,7 +711,7 @@
 
 .eliteTxStopError
 
- EQUD    0
+ EQUD    255
  EQUS    "Transmissions are already disabled"
  EQUB    0
  ALIGN
@@ -807,14 +807,14 @@
 
 .eliteTxStartError1
 
- EQUD    0
+ EQUD    255
  EQUS    "Transmissions are already enabled"
  EQUB    0
  ALIGN
 
 .eliteTxStartError2
 
- EQUD    0
+ EQUD    255
  EQUS    "Both the port and station number must be "
  EQUS    "non-zero to enable transmissions"
  EQUB    0
@@ -822,7 +822,7 @@
 
 .eliteTxStartError3
 
- EQUD    0
+ EQUD    255
  EQUS    "There was an error starting the transmission event"
  EQUB    0
  ALIGN
@@ -1716,7 +1716,7 @@
  BVS     skipM
  BCS     skipM
 
-  LDR     R0, [R0]                   \ If the first string doesn't match, jump
+ LDR     R0, [R0]                   \ If the first string doesn't match, jump
  ADR     R1, string1Match           \ to skipM to return from the subroutine as
  LDR     R1, [R1]                   \ Elite is not paged in
  CMP     R0, R1

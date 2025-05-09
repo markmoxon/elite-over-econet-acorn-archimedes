@@ -158,7 +158,7 @@ port1:
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxPortError:
-.long    0
+.long    255
 .byte    "Invalid port number (it must be in the range 1 to 254)"
 .byte    0
 .balign 4
@@ -189,7 +189,7 @@ stat2:
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxStationError:
-.long    0
+.long    255
 .byte    "Invalid station (it must be in the format 123 or 1.234)"
 .byte    0
 .balign 4
@@ -234,7 +234,7 @@ intv2:
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxIntervalError:
-.long    0
+.long    255
 .byte    "Invalid interval (it must be at least 1 second)"
 .byte    0
 .balign 4
@@ -264,7 +264,7 @@ stop1:
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxStopError:
-.long    0
+.long    255
 .byte    "Transmissions are already disabled"
 .byte    0
 .balign 4
@@ -313,18 +313,18 @@ star3:
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
 eliteTxStartError1:
-.long    0
+.long    255
 .byte    "Transmissions are already enabled"
 .byte    0
 .balign 4
 eliteTxStartError2:
-.long    0
+.long    255
 .byte    "Both the port and station number must be "
 .byte    "non-zero to enable transmissions"
 .byte    0
 .balign 4
 eliteTxStartError3:
-.long    0
+.long    255
 .byte    "There was an error starting the transmission event"
 .byte    0
 .balign 4
@@ -751,7 +751,7 @@ MonitorRank:
  SWI     XOS_ValidateAddress
  BVS     skipM
  BCS     skipM
-  LDR     R0, [R0]
+ LDR     R0, [R0]
  ADR     R1, string1Match
  LDR     R1, [R1]
  CMP     R0, R1
