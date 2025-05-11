@@ -439,6 +439,46 @@ REM ****************************************************************************
 
  EQUD    eliteTxResetHelp           \ Offset of help text
 
+                                    \ *EliteTxKills
+
+ EQUS    "EliteTxKills"             \ String to match, null terminated
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+ EQUD    EliteTxKills               \ Offset of code from module start
+
+ EQUB    1                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    1                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxKillsHelp           \ Offset of help text
+
+                                    \ *EliteTxKills
+
+ EQUS    "EliteTxDeaths"            \ String to match, null terminated
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+ EQUD    EliteTxDeaths              \ Offset of code from module start
+
+ EQUB    1                          \ Minimum number of parameters
+
+ EQUB    0                          \ OS_GSTrans map
+
+ EQUB    1                          \ Maximum number of parameters
+
+ EQUB    0                          \ Flags
+
+ EQUD    0                          \ Use default invalid syntax message
+
+ EQUD    eliteTxDeathsHelp          \ Offset of help text
+
  EQUD    0                          \ End of command table
 
 \ ******************************************************************************
@@ -881,6 +921,124 @@ REM ****************************************************************************
  EQUS    "*EliteTxReset resets the kill tally and death count."
  EQUB    13
  EQUS    "Syntax: *EliteTxReset"
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+\ ******************************************************************************
+\
+\       Name; EliteTxKills
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxKills command
+\
+\ ******************************************************************************
+
+.EliteTxKills
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ ADD     R1, R12, #stringBuffer     \ Try converting the parameter to an integer
+ MOV     R2, #12                    \ using the string buffer in the workspace
+ SWI     XOS_EvaluateExpression
+
+ BVS     kill1                      \ Report an error if the conversion went
+                                    \ wrong
+
+ TEQ     R1, #0                     \ Report an error if the result is not an
+ BNE     kill1                      \ integer
+
+ CMP     R2, #0                     \ Report an error if the kill count is not
+ BLT     kill1                      \ in the range 0 to 1000
+ CMP     R2, #1000
+ BGT     kill1
+
+ STR     R2, [R12, #netTally]       \ Set netTally to the new kill count
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}^                \ Return from the subroutine
+
+.kill1
+
+ ADR     R0, eliteTxKillsError      \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORRS    PC, R14, #1<<28            \ set [in bit 28 of the program counter]
+
+.eliteTxKillsError
+
+ EQUD    255
+ EQUS    "Invalid kill tally (it must be in the range 0 to 1000)"
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+.eliteTxKillsHelp
+
+ EQUS    "*EliteTxKills sets the kill tally."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxKills <kill_tally>"
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+\ ******************************************************************************
+\
+\       Name; EliteTxDeaths
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Implement the EliteTxDeaths command
+\
+\ ******************************************************************************
+
+.EliteTxDeaths
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ ADD     R1, R12, #stringBuffer     \ Try converting the parameter to an integer
+ MOV     R2, #12                    \ using the string buffer in the workspace
+ SWI     XOS_EvaluateExpression
+
+ BVS     deth1                      \ Report an error if the conversion went
+                                    \ wrong
+
+ TEQ     R1, #0                     \ Report an error if the result is not an
+ BNE     deth1                      \ integer
+
+ CMP     R2, #0                     \ Report an error if the kill count is not
+ BLT     deth1                      \ in the range 0 to 255
+ CMP     R2, #255
+ BGT     deth1
+
+ STR     R2, [R12, #netDeaths]      \ Set netDeaths to the new kill count
+
+ MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+
+ LDMFD   R13!, {PC}^                \ Return from the subroutine
+
+.deth1
+
+ ADR     R0, eliteTxDeathsError     \ Set R0 to point to the error message
+
+ LDMFD   R13!, {R14}                \ Return from the subroutine with the V flag
+ ORRS    PC, R14, #1<<28            \ set [in bit 28 of the program counter]
+
+.eliteTxDeathsError
+
+ EQUD    255
+ EQUS    "Invalid death count (it must be in the range 0 to 255)"
+ EQUB    0
+ OPT     FN_AlignWithZeroes
+
+.eliteTxDeathsHelp
+
+ EQUS    "*EliteTxDeaths sets the death count."
+ EQUB    13
+ EQUS    "Syntax: *EliteTxDeaths <death_count>"
  EQUB    0
  OPT     FN_AlignWithZeroes
 

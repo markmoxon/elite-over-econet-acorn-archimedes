@@ -139,6 +139,26 @@ helpAndCommandTable:
 .byte    0
 .long    0
 .long    eliteTxResetHelp
+.byte    "EliteTxKills"
+.byte    0
+.balign 4
+.long    EliteTxKills
+.byte    1
+.byte    0
+.byte    1
+.byte    0
+.long    0
+.long    eliteTxKillsHelp
+.byte    "EliteTxDeaths"
+.byte    0
+.balign 4
+.long    EliteTxDeaths
+.byte    1
+.byte    0
+.byte    1
+.byte    0
+.long    0
+.long    eliteTxDeathsHelp
 .long    0
 EliteTxPort:
  STMFD   R13!, {R14}
@@ -350,6 +370,68 @@ eliteTxResetHelp:
 .byte    "*EliteTxReset resets the kill tally and death count."
 .byte    13
 .byte    "Syntax: *EliteTxReset"
+.byte    0
+.balign 4
+EliteTxKills:
+ STMFD   R13!, {R14}
+ LDR     R12, [R12]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_EvaluateExpression
+ BVS     kill1
+ TEQ     R1, #0
+ BNE     kill1
+ CMP     R2, #0
+ BLT     kill1
+ CMP     R2, #1000
+ BGT     kill1
+ STR     R2, [R12, #netTally]
+ MOV     R0, #0
+ LDMFD   R13!, {PC}^
+kill1:
+ ADR     R0, eliteTxKillsError
+ LDMFD   R13!, {R14}
+ ORRS    PC, R14, #1<<28
+eliteTxKillsError:
+.long    255
+.byte    "Invalid kill tally (it must be in the range 0 to 1000)"
+.byte    0
+.balign 4
+eliteTxKillsHelp:
+.byte    "*EliteTxKills sets the kill tally."
+.byte    13
+.byte    "Syntax: *EliteTxKills <kill_tally>"
+.byte    0
+.balign 4
+EliteTxDeaths:
+ STMFD   R13!, {R14}
+ LDR     R12, [R12]
+ ADD     R1, R12, #stringBuffer
+ MOV     R2, #12
+ SWI     XOS_EvaluateExpression
+ BVS     deth1
+ TEQ     R1, #0
+ BNE     deth1
+ CMP     R2, #0
+ BLT     deth1
+ CMP     R2, #255
+ BGT     deth1
+ STR     R2, [R12, #netDeaths]
+ MOV     R0, #0
+ LDMFD   R13!, {PC}^
+deth1:
+ ADR     R0, eliteTxDeathsError
+ LDMFD   R13!, {R14}
+ ORRS    PC, R14, #1<<28
+eliteTxDeathsError:
+.long    255
+.byte    "Invalid death count (it must be in the range 0 to 255)"
+.byte    0
+.balign 4
+eliteTxDeathsHelp:
+.byte    "*EliteTxDeaths sets the death count."
+.byte    13
+.byte    "Syntax: *EliteTxDeaths <death_count>"
 .byte    0
 .balign 4
 EliteStatus:
