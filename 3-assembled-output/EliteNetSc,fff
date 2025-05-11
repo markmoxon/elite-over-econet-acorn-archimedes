@@ -74,8 +74,15 @@ REM ****************************************************************************
  XEconet_ReadStationNumber = &6000F : REM The operating system call to convert a
                                     : REM string into a network and station number
 
- XMessageTrans_ErrorLookup = &60516 : REM The operating system call to expand tokens
+ XWimp_ReadSysInfo = &600F2         : REM The operating system call to fetch the
+                                    : REM handle of the current task [amongst other
+                                    : REM information]
+
+ XMessageTrans_ErrorLookup = &61506 : REM The operating system call to expand tokens
                                     : REM in an error string
+
+ XTaskManager_EnumerateTasks = &62681   : REM The operating system call to enumerate
+                                        : REM task handles for running tasks
 
  XElite_GameOver = &E0CC0           : REM The SWI call to inject when the game
                                     : REM prints the GAME OVER string
@@ -186,7 +193,11 @@ REM ****************************************************************************
  patchApplied = &4C                 : REM A flag to determine whether the game over
                                     : REM patch has been applied
 
- endWorkspace = &50                 : REM End of the private workspace
+ taskHandle = &50                   : REM The task handle for Archimedes Elite
+
+ taskBuffer = &54                   : REM A buffer for TaskManager_EnumerateTasks
+
+ endWorkspace = &64                 : REM End of the private workspace
 
  workspaceSize = endWorkspace - startWorkspace  : REM The size of the workspace
 
@@ -273,7 +284,7 @@ REM ****************************************************************************
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.01 (09 May 2025)"
+ EQUS    "1.01 (11 May 2025)"
  EQUB    0
  OPT     FN_AlignWithZeroes
 
@@ -1319,6 +1330,8 @@ REM ****************************************************************************
  MOV     R1, #0                     \ Reset the handle of the previous packet as
  STR     R1, [R12, #econetHandle]   \ there isn't one
 
+ STR     R1, [R12, #taskHandle]      \ Zero the task handle for the Elite task
+
  STR     R1, [R12, #netTally]       \ Zero the kill tally
 
  STR     R1, [R12, #netDeaths]      \ Zero the death count
@@ -1469,44 +1482,63 @@ REM ****************************************************************************
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
- ADR     R0, string1Addr            \ Check to see if the first string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipT
- BCS     skipT
+ LDR     R2, [R12, #taskHandle]     \ If taskHandle is zero then we have not yet
+ TEQ     R2, #0                     \ fetched the Elite task handle, so call
+ BLEQ    FetchEliteTaskHandle       \ FetchEliteTaskHandle to fetch it, storing
+                                    \ the result in both taskHandle and R2
 
- LDR     R0, [R0]                   \ If the first string doesn't match, jump
- ADR     R1, string1Match           \ to skipT to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipT
+ BEQ     skipT                      \ If the handle is still zero, then we can't
+                                    \ find the Elite task, so jump to skipT to
+                                    \ return from the subroutine
 
- ADR     R0, string2Addr            \ Check to see if the second string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipT
- BCS     skipT
+ MOV     R0, #5                     \ Call Wimp_ReadSysInfo to read information
+ SWI     XWimp_ReadSysInfo          \ item 5 into R0, which is the handle of the
+ BVS     skipT                      \ currently active task
 
- LDR     R0, [R0]                   \ If the second string doesn't match, jump
- ADR     R1, string2Match           \ to skipT to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipT
+ CMP     R0, R2                     \ If the handle of the currently active task
+ BNE     skipT                      \ does not match the handle in R2, then
+                                    \ Elite is not currently active, so jump to
+                                    \ skipT to return from the subroutine as
+                                    \ Elite is not paged in
 
- ADR     R0, string3Addr            \ Check to see if the third string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipT
- BCS     skipT
-
- LDR     R0, [R0]                   \ If the third string doesn't match, jump
- ADR     R1, string3Match           \ to skipT to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipT
+\ADR     R0, string1Addr            \ Check to see if the first string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipT
+\BCS     skipT
+\
+\LDR     R0, [R0]                   \ If the first string doesn't match, jump
+\ADR     R1, string1Match           \ to skipT to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipT
+\
+\ADR     R0, string2Addr            \ Check to see if the second string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipT
+\BCS     skipT
+\
+\LDR     R0, [R0]                   \ If the second string doesn't match, jump
+\ADR     R1, string2Match           \ to skipT to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipT
+\
+\ADR     R0, string3Addr            \ Check to see if the third string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipT
+\BCS     skipT
+\
+\LDR     R0, [R0]                   \ If the third string doesn't match, jump
+\ADR     R1, string3Match           \ to skipT to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipT
 
                                     \ If we get here then Elite is paged in
 
@@ -1709,44 +1741,63 @@ REM ****************************************************************************
                                     \ and R14_svc on the stack, so we can revert
                                     \ both of them when we are done
 
- ADR     R0, string1Addr            \ Check to see if the first string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipM
- BCS     skipM
+ LDR     R2, [R12, #taskHandle]     \ If taskHandle is zero then we have not yet
+ TEQ     R2, #0                     \ fetched the Elite task handle, so call
+ BLEQ    FetchEliteTaskHandle       \ FetchEliteTaskHandle to fetch it, storing
+                                    \ the result in both taskHandle and R2
 
- LDR     R0, [R0]                   \ If the first string doesn't match, jump
- ADR     R1, string1Match           \ to skipM to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipM
+ BEQ     skipM                      \ If the handle is still zero, then we can't
+                                    \ find the Elite task, so jump to skipM to
+                                    \ return from the subroutine
 
- ADR     R0, string2Addr            \ Check to see if the second string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipM
- BCS     skipM
+ MOV     R0, #5                     \ Call Wimp_ReadSysInfo to read information
+ SWI     XWimp_ReadSysInfo          \ item 5 into R0, which is the handle of the
+ BVS     skipM                      \ currently active task
 
- LDR     R0, [R0]                   \ If the second string doesn't match, jump
- ADR     R1, string2Match           \ to skipM to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipM
+ CMP     R0, R2                     \ If the handle of the currently active task
+ BNE     skipM                      \ does not match the handle in R2, then
+                                    \ Elite is not currently active, so jump to
+                                    \ skipM to return from the subroutine as
+                                    \ Elite is not paged in
 
- ADR     R0, string3Addr            \ Check to see if the third string to match
- LDR     R0, [R0]                   \ is in logical RAM
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipM
- BCS     skipM
-
- LDR     R0, [R0]                   \ If the third string doesn't match, jump
- ADR     R1, string3Match           \ to skipM to return from the subroutine as
- LDR     R1, [R1]                   \ Elite is not paged in
- CMP     R0, R1
- BNE     skipM
+\ADR     R0, string1Addr            \ Check to see if the first string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipM
+\BCS     skipM
+\
+\LDR     R0, [R0]                   \ If the first string doesn't match, jump
+\ADR     R1, string1Match           \ to skipM to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipM
+\
+\ADR     R0, string2Addr            \ Check to see if the second string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipM
+\BCS     skipM
+\
+\LDR     R0, [R0]                   \ If the second string doesn't match, jump
+\ADR     R1, string2Match           \ to skipM to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipM
+\
+\ADR     R0, string3Addr            \ Check to see if the third string to match
+\LDR     R0, [R0]                   \ is in logical RAM
+\MOV     R1, R0
+\SWI     XOS_ValidateAddress
+\BVS     skipM
+\BCS     skipM
+\
+\LDR     R0, [R0]                   \ If the third string doesn't match, jump
+\ADR     R1, string3Match           \ to skipM to return from the subroutine as
+\LDR     R1, [R1]                   \ Elite is not paged in
+\CMP     R0, R1
+\BNE     skipM
 
                                     \ If we get here then Elite is paged in
 
@@ -1817,6 +1868,89 @@ REM ****************************************************************************
 
 \ ******************************************************************************
 \
+\       Name; FetchEliteTaskHandle
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Fetch the task handle for Archimedes Elite
+\
+\ ------------------------------------------------------------------------------
+\
+\ Returns;
+\
+\   R0                              The result;
+\
+\                                     * 0 = Elite task not found
+\
+\                                     * Non-zero = The handle of the Elite task
+\
+\   Z flag                          Set according to the result
+\
+\ ******************************************************************************
+
+.FetchEliteTaskHandle
+
+ STMFD   R13!, {R14}                \ Store the return address on the stack
+
+ MOV     R0, #0                     \ We work our way through all the tasks with
+                                    \ TaskManager_EnumerateTasks, so set R0 to 0
+                                    \ to keep track of the returned task
+
+.hand1
+
+ ADD     R1, R12, #taskBuffer       \ Fetch details of the next task into the
+ MOV     R2, #16                    \ 16-byte buffer at taskBuffer
+ SWI     XTaskManager_EnumerateTasks
+
+ MOVVS   R0, #0                     \ IF the SWI call failed, jump to hand2 with
+ BVS     hand2                      \ R0 set to 0 to indicate that the Elite
+                                    \ task was not found
+
+ CMP     R0, #0                     \ If R0 < 0 then we have run out of tasks to
+ MOVLT   R0, #0                     \ check, so jump to hand2 with R0 set to 0
+ BLT     hand2                      \ to indicate that the Elite task was not
+                                    \ found
+
+                                    \ If we get here then we have fetched the
+                                    \ details of the next task into the buffer
+
+ LDR     R3, [R12, #taskBuffer+4]   \ Set R3 to the first second word in the
+                                    \ buffer, which contains the address of the
+                                    \ task name
+
+ ADR     R5, eliteTaskName          \ Set R5 to the string 'Elite', which is the
+                                    \ task name we want to match
+
+ LDR     R4, [R3], #4               \ If the first word of the fetched task name
+ LDR     R6, [R5], #4               \ does not match 'Elit', jump to hand1 to
+ CMP     R4, R6                     \ fetch the next task name
+ BNE     hand1
+
+ LDR     R4, [R3], #4               \ If the second word of the fetched task
+ BIC     R4, R4, #&FF000000         \ name does not match 'e' and a null, jump
+ BIC     R4, R4, #&00FF0000         \ to hand1 to fetch the next task name
+ LDR     R6, [R5], #4
+ CMP     R4, R6
+ BNE     hand1
+
+ LDR     R0, [R12, #taskBuffer]     \ If we get here then we have a match and we
+ STR     R0, [R12, #taskHandle]     \ have found the Elite task, so copy the
+                                    \ task handle from the first word of the
+                                    \ buffer into taskHandle
+
+.hand2
+
+                                    \ At this point R0 is either zero [if we
+                                    \ have not managed to find the Elite task]
+                                    \ or it contains the non-zero task handle
+
+ MOVS    R2, R0                     \ Set R2 to R0, setting the flags, so we
+                                    \ return the handle in R2 or a zero for no
+                                    \ match
+
+ LDMFD   R13!, {PC}                 \ Return from the subroutine
+
+\ ******************************************************************************
+\
 \       Name; Archimedes Elite addresses [version 1.14]
 \       Type; Workspace
 \   Category; Econet
@@ -1844,29 +1978,29 @@ REM ****************************************************************************
 
  EQUD    &000653A0
 
-.string1Addr
-
- EQUD    &0001AF14
-
-.string1Match
-
- EQUD    &4E495247                  \ GRIN [part of 'CLIVE GRINGRAS']
-
-.string2Addr
-
- EQUD    &0001AF00
-
-.string2Match
-
- EQUD    &45525241                  \ ARRE [part of 'WARREN BURCH']
-
-.string3Addr
-
- EQUD    &00071508
-
-.string3Match
-
- EQUD    &34312E31                  \ 1.14 [part of 'Version 1.14']
+\.string1Addr
+\
+\EQUD    &0001AF14
+\
+\.string1Match
+\
+\EQUD    &4E495247                  \ GRIN [part of 'CLIVE GRINGRAS']
+\
+\.string2Addr
+\
+\EQUD    &0001AF00
+\
+\.string2Match
+\
+\EQUD    &45525241                  \ ARRE [part of 'WARREN BURCH']
+\
+\.string3Addr
+\
+\EQUD    &00071508
+\
+\.string3Match
+\
+\EQUD    &34312E31                  \ 1.14 [part of 'Version 1.14']
 
 .gameOverAddr
 
@@ -1883,6 +2017,12 @@ REM ****************************************************************************
 .restartPatch
 
  SWI     XElite_GameRestart         \ Replaces MOV R2, #&12C
+
+.eliteTaskName
+
+ EQUS "Elite"
+ EQUB 0
+ OPT     FN_AlignWithZeroes
 
 \ ******************************************************************************
 \

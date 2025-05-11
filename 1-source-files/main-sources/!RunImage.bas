@@ -28,7 +28,7 @@ DEF PROCinit
  DIM ind% 500,ind2% 200,tempname% 100,dc% &100
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
- version$="1.00 (27-Apr-2025)"
+ version$="1.01 (11-May-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18

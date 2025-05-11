@@ -14,7 +14,9 @@
 .set XEconet_StartTransmit, 0x60006
 .set XEconet_AbandonTransmit, 0x60008
 .set XEconet_ReadStationNumber, 0x6000F
-.set XMessageTrans_ErrorLookup, 0x60516
+.set XWimp_ReadSysInfo, 0x600F2
+.set XMessageTrans_ErrorLookup, 0x61506
+.set XTaskManager_EnumerateTasks, 0x62681
 .set XElite_GameOver, 0xE0CC0
 .set XElite_GameRestart, 0xE0CC1
 .set startWorkspace, 0x00
@@ -40,7 +42,9 @@
 .set stringBuffer, 0x3C
 .set gameIsOver, 0x48
 .set patchApplied, 0x4C
-.set endWorkspace, 0x50
+.set taskHandle, 0x50
+.set taskBuffer, 0x54
+.set endWorkspace, 0x64
 .set workspaceSize, endWorkspace - startWorkspace
 .org CODE
 .long    0
@@ -61,7 +65,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.01 (09 May 2025)"
+.byte    "1.01 (11 May 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -548,6 +552,7 @@ InitialiseModule:
  MOV     R12, R2
  MOV     R1, #0
  STR     R1, [R12, #econetHandle]
+ STR     R1, [R12, #taskHandle]
  STR     R1, [R12, #netTally]
  STR     R1, [R12, #netDeaths]
  STR     R1, [R12, #gameIsOver]
@@ -605,38 +610,14 @@ TransmitData:
  TEQP    R4, #3
  MOV     R0, R0
  STMFD   R13!, {R5, R14}
- ADR     R0, string1Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
+ LDR     R2, [R12, #taskHandle]
+ TEQ     R2, #0
+ BLEQ    FetchEliteTaskHandle
+ BEQ     skipT
+ MOV     R0, #5
+ SWI     XWimp_ReadSysInfo
  BVS     skipT
- BCS     skipT
- LDR     R0, [R0]
- ADR     R1, string1Match
- LDR     R1, [R1]
- CMP     R0, R1
- BNE     skipT
- ADR     R0, string2Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipT
- BCS     skipT
- LDR     R0, [R0]
- ADR     R1, string2Match
- LDR     R1, [R1]
- CMP     R0, R1
- BNE     skipT
- ADR     R0, string3Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipT
- BCS     skipT
- LDR     R0, [R0]
- ADR     R1, string3Match
- LDR     R1, [R1]
- CMP     R0, R1
+ CMP     R0, R2
  BNE     skipT
  LDR     R0, [R12, #semaphore]
  TEQ     R0, #0
@@ -745,38 +726,14 @@ MonitorRank:
  TEQP    R4, #3
  MOV     R0, R0
  STMFD   R13!, {R5, R14}
- ADR     R0, string1Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
+ LDR     R2, [R12, #taskHandle]
+ TEQ     R2, #0
+ BLEQ    FetchEliteTaskHandle
+ BEQ     skipM
+ MOV     R0, #5
+ SWI     XWimp_ReadSysInfo
  BVS     skipM
- BCS     skipM
- LDR     R0, [R0]
- ADR     R1, string1Match
- LDR     R1, [R1]
- CMP     R0, R1
- BNE     skipM
- ADR     R0, string2Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipM
- BCS     skipM
- LDR     R0, [R0]
- ADR     R1, string2Match
- LDR     R1, [R1]
- CMP     R0, R1
- BNE     skipM
- ADR     R0, string3Addr
- LDR     R0, [R0]
- MOV     R1, R0
- SWI     XOS_ValidateAddress
- BVS     skipM
- BCS     skipM
- LDR     R0, [R0]
- ADR     R1, string3Match
- LDR     R1, [R1]
- CMP     R0, R1
+ CMP     R0, R2
  BNE     skipM
  LDR     R1, [R12, #patchApplied]
  TEQ     R1, #1
@@ -823,6 +780,35 @@ skipM:
  MOV     R0, R0
  LDMFD   R13!, {R0-R12}
  MOV     PC, R14
+FetchEliteTaskHandle:
+ STMFD   R13!, {R14}
+ MOV     R0, #0
+hand1:
+ ADD     R1, R12, #taskBuffer
+ MOV     R2, #16
+ SWI     XTaskManager_EnumerateTasks
+ MOVVS   R0, #0
+ BVS     hand2
+ CMP     R0, #0
+ MOVLT   R0, #0
+ BLT     hand2
+ LDR     R3, [R12, #taskBuffer+4]
+ ADR     R5, eliteTaskName
+ LDR     R4, [R3], #4
+ LDR     R6, [R5], #4
+ CMP     R4, R6
+ BNE     hand1
+ LDR     R4, [R3], #4
+ BIC     R4, R4, #0xFF000000
+ BIC     R4, R4, #0x00FF0000
+ LDR     R6, [R5], #4
+ CMP     R4, R6
+ BNE     hand1
+ LDR     R0, [R12, #taskBuffer]
+ STR     R0, [R12, #taskHandle]
+hand2:
+ MOVS    R2, R0
+ LDMFD   R13!, {PC}
 cmdrName:
 .long    0x0005A698
 cmdrRank:
@@ -833,18 +819,6 @@ cmdrLegal:
 .long    0x00065398
 cmdrCondition:
 .long    0x000653A0
-string1Addr:
-.long    0x0001AF14
-string1Match:
-.long    0x4E495247
-string2Addr:
-.long    0x0001AF00
-string2Match:
-.long    0x45525241
-string3Addr:
-.long    0x00071508
-string3Match:
-.long    0x34312E31
 gameOverAddr:
 .long    0x0000BBD0
 gameOverPatch:
@@ -853,3 +827,7 @@ restartAddr:
 .long    0x0001AF24
 restartPatch:
  SWI     XElite_GameRestart
+eliteTaskName:
+.byte "Elite"
+.byte 0
+.balign 4
