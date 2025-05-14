@@ -3,6 +3,6 @@
 Set EliteNet$Dir <Obey$Dir>
 IconSprites <EliteNet$Dir>.!Sprites
 RMEnsure Econet 0.00 Error Econet needs to be enabled
-RMEnsure EliteOverEconet 0.00 RMRun <EliteNet$Dir>.EliteNet
+RMEnsure EliteOverEconet 1.10 RMRun <EliteNet$Dir>.EliteNet
 WimpSlot -min 64K -max 64K
 Run <EliteNet$Dir>.!RunImage %*0

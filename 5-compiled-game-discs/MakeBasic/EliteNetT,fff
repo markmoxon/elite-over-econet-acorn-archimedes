@@ -240,7 +240,7 @@ REM ****************************************************************************
 
  EQUD    FinaliseModule             \ Offset to finalisation code
 
- EQUD    0                          \ Offset to service call handler
+ EQUD    ServiceCallHandler         \ Offset to service call handler
 
  EQUD    title                      \ Offset to title string
 
@@ -284,7 +284,7 @@ REM ****************************************************************************
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.01 (11 May 2025)"
+ EQUS    "1.10 (13 May 2025)"
  EQUB    0
  OPT     FN_AlignWithZeroes
 
@@ -645,49 +645,25 @@ REM ****************************************************************************
  MOV     R2, #12                    \ using the string buffer in the workspace
  SWI     XOS_EvaluateExpression
 
- BVS     intv2                      \ Report an error if the conversion went
+ BVS     intv1                      \ Report an error if the conversion went
                                     \ wrong
 
  TEQ     R1, #0                     \ Report an error if the result is not an
- BNE     intv2                      \ integer
+ BNE     intv1                      \ integer
 
 .EliteTxInterval_SWI
 
  TEQ     R2, #0                     \ Report an error if the interval is zero
- BEQ     intv2
+ BEQ     intv1
 
  STR     R2, [R12, #scoreInterval]  \ Set scoreInterval to the interval in
                                     \ seconds
-
- LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
-
- TEQ     R1, #0                     \ If transmissions are stopped, jump to
- BEQ     intv1                      \ intv1 to skip the ticker event reset
-
- FN_ADRL(0, TransmitData)           \ Remove the TransmitData routine from the
- MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called [we set R1 to the address of the
-                                    \ module's private workspace so it matches
-                                    \ the value of R2 that was used when adding
-                                    \ the routine to the ticker list]
-
- LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- MOV     R1, #100                   \ into the ticker event list so it gets
- MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
- FN_ADRL(1, TransmitData)           \ transmit the commander data to the
- MOV     R2, R12                    \ scoreboard
- SWI     XOS_CallEvery
-
- BVS     star3                      \ If the event failed to start up, jump to
-                                    \ star3 to report this 
-
-.intv1
 
  MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
-.intv2
+.intv1
 
  ADR     R0, eliteTxIntervalError   \ Set R0 to point to the error message
 
@@ -740,16 +716,8 @@ REM ****************************************************************************
  BEQ     stop1                      \ to stop1 to report this
 
  MOV     R0, #0                     \ Set scoreEnabled = 0 to denote that score
- STR     R0, [R12, #scoreEnabled]   \ transmissions are disabled
-
- FN_ADRL(0, TransmitData)           \ Remove the TransmitData routine from the
- MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called [we set R1 to the address of the
-                                    \ module's private workspace so it matches
-                                    \ the value of R2 that was used when adding
-                                    \ the routine to the ticker list]
-
- MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
+ STR     R0, [R12, #scoreEnabled]   \ transmissions are disabled, and keep R0
+                                    \ zero so we do not return an error
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
@@ -811,22 +779,6 @@ REM ****************************************************************************
 
  BEQ     star2                      \ If either of them is zero, jump to star2
                                     \ to report this and prevent startup
-
- FN_ADRL(0, TransmitData)           \ Remove the TransmitData routine from the
- MOV     R1, R12                    \ ticker event list so it is no longer
- SWI     XOS_RemoveTickerEvent      \ called [just to make sure there are no
-                                    \ lingering ticker events from previous
-                                    \ actions]
-
- LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- MOV     R1, #100                   \ into the ticker event list so it gets
- MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
- FN_ADRL(1, TransmitData)           \ transmit the commander data to the
- MOV     R2, R12                    \ scoreboard
- SWI     XOS_CallEvery
-
- BVS     star3                      \ If the event failed to start up, jump to
-                                    \ star3 to report this 
 
  MOV     R0, #1                     \ Set scoreEnabled = 1 to denote that score
  STR     R0, [R12, #scoreEnabled]   \ transmissions are enabled
@@ -1519,50 +1471,6 @@ REM ****************************************************************************
 
 .init1
 
- MOV     R0, #50                    \ Add a call to the MonitorRank routine
- ADR     R1, MonitorRank            \ into the ticker event list so it gets
- MOV     R2, R12                    \ called twice each second [i.e. every 50
- SWI     XOS_CallEvery              \ centiseconds], to check the commander's
-                                    \ rank for changes
-                                    \
-                                    \ Note that R2 contains the address of the
-                                    \ module's private workspace, so this will
-                                    \ be sent to the routine in R12 whenever it
-                                    \ is called
-
- LDMVSFD R13!, {PC}                 \ If the V flag is set then the ticker has
-                                    \ not been added and the module can't be
-                                    \ run, so return without initialising the
-                                    \ module
-
-                                    \ If transmissions have already been started
-                                    \ [presumably because this module is being
-                                    \ reinitialised] then we need restart the
-                                    \ ticker event
-
- LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
-
- TEQ     R1, #1                     \ If transmissions have not been started, 
- BNE     init2                      \ jump to init2 to return from the
-                                    \ subroutine
-
- LDR     R1, [R12, #scorePort]      \ Set R1 to the port number and R2 to the
- TEQ     R1, #0                     \ station number, setting the Z flag if
- LDRNE   R2, [R12, #scoreStation]   \ either of them is zero
- TEQNE   R2, #0
-
- BEQ     init2                      \ If either of them is zero, jump to init2
-                                    \ to return from the subroutine
-
- LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
- MOV     R1, #100                   \ into the ticker event list so it gets
- MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
- FN_ADRL(1, TransmitData)           \ transmit the commander data to the
- MOV     R2, R12                    \ scoreboard
- SWI     XOS_CallEvery
-
-.init2
-
  LDMFD   R13!, {PC}^                \ Return from the subroutine
 
 \ ******************************************************************************
@@ -1602,6 +1510,75 @@ REM ****************************************************************************
  STR     R1, [R12, #econetHandle]
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
+
+\ ******************************************************************************
+\
+\       Name; ServiceCallHandler
+\       Type; Subroutine
+\   Category; Econet
+\    Summary; Handle service calls
+\
+\ ******************************************************************************
+
+.ServiceCallHandler
+
+ TEQ     R1, #&46                   \ If this is not Service_ModeChange then
+ MOVNES  PC, R14                    \ return from the subroutine
+
+ STMFD   R13!, {R0-R12, R14}        \ Store the registers that we want to use on
+                                    \ the stack so they can be preserved
+
+ LDR     R12, [R12]                 \ Set R12 to the address of the module's
+                                    \ private workspace
+
+ TEQ     R2, #13                    \ If we are changing to mode 13 then jump to
+ BEQ     serv1                      \ serv1 to enable the ticker events, as we
+                                    \ are entering the game
+
+ ADR     R0, TransmitData           \ Remove the TransmitData routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called
+
+ ADR     R0, MonitorRank            \ Remove the MonitorRank routine from the
+ MOV     R1, R12                    \ ticker event list so it is no longer
+ SWI     XOS_RemoveTickerEvent      \ called
+
+ LDMFD   R13!, {R0-R12, PC}^        \ Retrieve the registers that we stored on
+                                    \ the stack
+
+.serv1
+
+ MOV     R0, #50                    \ Add a call to the MonitorRank routine
+ ADR     R1, MonitorRank            \ into the ticker event list so it gets
+ MOV     R2, R12                    \ called twice each second [i.e. every 50
+ SWI     XOS_CallEvery              \ centiseconds], to check the commander's
+                                    \ rank for changes
+
+ LDR     R1, [R12, #scoreEnabled]   \ Set R1 to the current enabled state
+
+ TEQ     R1, #1                     \ If transmissions have not been started, 
+ BNE     serv2                      \ jump to serv2 to return from the
+                                    \ subroutine
+
+ LDR     R1, [R12, #scorePort]      \ Set R1 to the port number and R2 to the
+ TEQ     R1, #0                     \ station number, setting the Z flag if
+ LDRNE   R2, [R12, #scoreStation]   \ either of them is zero
+ TEQNE   R2, #0
+
+ BEQ     serv2                      \ If either of them is zero, jump to init2
+                                    \ to return from the subroutine
+
+ LDR     R0, [R12, #scoreInterval]  \ Add a call to the TransmitData routine
+ MOV     R1, #100                   \ into the ticker event list so it gets
+ MUL     R0, R1, R0                 \ called every scoreInterval seconds, to
+ FN_ADRL(1, TransmitData)           \ transmit the commander data to the
+ MOV     R2, R12                    \ scoreboard
+ SWI     XOS_CallEvery
+
+.serv2
+
+ LDMFD   R13!, {R0-R12, PC}^        \ Retrieve the registers that we stored on
+                                    \ the stack
 
 \ ******************************************************************************
 \

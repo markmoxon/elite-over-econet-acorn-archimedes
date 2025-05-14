@@ -50,7 +50,7 @@
 .long    0
 .long    InitialiseModule
 .long    FinaliseModule
-.long    0
+.long    ServiceCallHandler
 .long    title
 .long    help
 .long    helpAndCommandTable
@@ -65,7 +65,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.01 (11 May 2025)"
+.byte    "1.10 (13 May 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -230,30 +230,16 @@ EliteTxInterval:
  ADD     R1, R12, #stringBuffer
  MOV     R2, #12
  SWI     XOS_EvaluateExpression
- BVS     intv2
+ BVS     intv1
  TEQ     R1, #0
- BNE     intv2
+ BNE     intv1
 EliteTxInterval_SWI:
  TEQ     R2, #0
- BEQ     intv2
- STR     R2, [R12, #scoreInterval]
- LDR     R1, [R12, #scoreEnabled]
- TEQ     R1, #0
  BEQ     intv1
- ADRL    R0, TransmitData
- MOV     R1, R12
- SWI     XOS_RemoveTickerEvent
- LDR     R0, [R12, #scoreInterval]
- MOV     R1, #100
- MUL     R0, R1, R0
- ADRL    R1, TransmitData
- MOV     R2, R12
- SWI     XOS_CallEvery
- BVS     star3
-intv1:
+ STR     R2, [R12, #scoreInterval]
  MOV     R0, #0
  LDMFD   R13!, {PC}^
-intv2:
+intv1:
  ADR     R0, eliteTxIntervalError
  LDMFD   R13!, {R14}
  ORRS    PC, R14, #1<<28
@@ -278,10 +264,6 @@ EliteTxStop_SWI:
  BEQ     stop1
  MOV     R0, #0
  STR     R0, [R12, #scoreEnabled]
- ADRL    R0, TransmitData
- MOV     R1, R12
- SWI     XOS_RemoveTickerEvent
- MOV     R0, #0
  LDMFD   R13!, {PC}^
 stop1:
  ADR     R0, eliteTxStopError
@@ -310,16 +292,6 @@ EliteTxStart_SWI:
  LDRNE   R2, [R12, #scoreStation]
  TEQNE   R2, #0
  BEQ     star2
- ADRL    R0, TransmitData
- MOV     R1, R12
- SWI     XOS_RemoveTickerEvent
- LDR     R0, [R12, #scoreInterval]
- MOV     R1, #100
- MUL     R0, R1, R0
- ADRL    R1, TransmitData
- MOV     R2, R12
- SWI     XOS_CallEvery
- BVS     star3
  MOV     R0, #1
  STR     R0, [R12, #scoreEnabled]
  MOV     R0, #0
@@ -649,26 +621,6 @@ InitialiseModule:
  MOV     R1, #10
  STR     R1, [R12, #scoreInterval]
 init1:
- MOV     R0, #50
- ADR     R1, MonitorRank
- MOV     R2, R12
- SWI     XOS_CallEvery
- LDMVSFD R13!, {PC}
- LDR     R1, [R12, #scoreEnabled]
- TEQ     R1, #1
- BNE     init2
- LDR     R1, [R12, #scorePort]
- TEQ     R1, #0
- LDRNE   R2, [R12, #scoreStation]
- TEQNE   R2, #0
- BEQ     init2
- LDR     R0, [R12, #scoreInterval]
- MOV     R1, #100
- MUL     R0, R1, R0
- ADRL    R1, TransmitData
- MOV     R2, R12
- SWI     XOS_CallEvery
-init2:
  LDMFD   R13!, {PC}^
 FinaliseModule:
  STMFD   R13!, {R14}
@@ -685,6 +637,41 @@ FinaliseModule:
  MOV     R1, #0
  STR     R1, [R12, #econetHandle]
  LDMFD   R13!, {PC}^
+ServiceCallHandler:
+ TEQ     R1, #0x46
+ MOVNES  PC, R14
+ STMFD   R13!, {R0-R12, R14}
+ LDR     R12, [R12]
+ TEQ     R2, #13
+ BEQ     serv1
+ ADR     R0, TransmitData
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
+ ADR     R0, MonitorRank
+ MOV     R1, R12
+ SWI     XOS_RemoveTickerEvent
+ LDMFD   R13!, {R0-R12, PC}^
+serv1:
+ MOV     R0, #50
+ ADR     R1, MonitorRank
+ MOV     R2, R12
+ SWI     XOS_CallEvery
+ LDR     R1, [R12, #scoreEnabled]
+ TEQ     R1, #1
+ BNE     serv2
+ LDR     R1, [R12, #scorePort]
+ TEQ     R1, #0
+ LDRNE   R2, [R12, #scoreStation]
+ TEQNE   R2, #0
+ BEQ     serv2
+ LDR     R0, [R12, #scoreInterval]
+ MOV     R1, #100
+ MUL     R0, R1, R0
+ ADRL    R1, TransmitData
+ MOV     R2, R12
+ SWI     XOS_CallEvery
+serv2:
+ LDMFD   R13!, {R0-R12, PC}^
 TransmitData:
  STMFD   R13!, {R0-R12}
  MOV     R5, PC
