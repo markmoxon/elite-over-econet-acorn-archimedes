@@ -15,24 +15,43 @@ REPEAT
   WHEN 2:SYS "Wimp_OpenWindow",,block%
   WHEN 3:SYS "Wimp_CloseWindow",,block%
   WHEN 6:PROCmouse_click
+  WHEN 7:PROCcreate_data:PROCend_dragsave(block%,save%,i_filename%,filetype%,filesize%)
   WHEN 8:PROCkey_pressed
   WHEN 9:PROCmenu_selection
-  WHEN 17,18:IF block%!16=0 THEN quit%=TRUE
+  WHEN 17,18:PROCmessage
+  WHEN 19:SYS "OS_File",6,block%+44:PROCerror("Data transfer failed: Receiver died")
  ENDCASE
 UNTIL quit%
 SYS "Wimp_CloseDown",task%,&4B534154
 END
 :
+DEF PROCmessage
+ CASE block%!16 OF
+  WHEN 0:quit%=TRUE
+  WHEN 2:temp$=FNmessage_datasave(block%)
+  WHEN 3,5
+   IF block%!40=filetype% THEN PROCload_ack:PROCload_file(FNzero_string(block%+44))
+  WHEN 6
+   IF firstsave% THEN
+    PROCcreate_data
+    source_buffer%=scorefile%:bytes_left%=filesize%
+   ENDIF
+   firstsave%=FNmessage_ramsave(block%,task%,source_buffer%,bytes_left%)
+   IF firstsave% THEN SYS "Wimp_CreateMenu",,-1
+ ENDCASE
+ENDPROC
+:
 DEF PROCinit
- DIM block% &1000,eblock% &100,bmenu% &1000
- DIM ind% 500,ind2% 200,tempname% 100,dc% &100
+ DIM block% &1000,tblock% &1000,eblock% &100,bmenu% &1000
+ DIM ind% 500,ind2% 200,ind3% 400,tempname% 100,dc% &100,scorefile% 1000
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
- version$="1.10 (13-May-2025)"
+ version$="1.20 (16-May-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
- i_version%=4
+ i_version%=4:i_filename%=2:i_fileicon%=3
+ filetype%=&3EE
  SYS "Wimp_Initialise",200,&4B534154,task_name$ TO wimp%,task%
  PROCtemplates
  PROCchange_icon(block%,info%,i_version%,version$)
@@ -41,6 +60,7 @@ DEF PROCinit
  icon_bar%=FNcreate_icon(block%,-1,0,-68,92,68,flag%,"!elitenet",0,0,0)
  PROCinit_menu(bmenu%,width%,end%,"EliteNet")
  PROCst_menu_item(bmenu%,width%,end%,"Info",0,0,0,0,info%)
+ PROCst_menu_item(bmenu%,width%,end%,"Save",0,0,0,0,save%)
  PROCst_menu_item(bmenu%,width%,end%,"Quit",0,0,0,1,-1)
 ENDPROC
 :
@@ -61,6 +81,9 @@ DEF PROCtemplates
  $tempname%="progInfo"
  SYS "Wimp_LoadTemplate",,block%,ind2%,ind2%+199,-1,tempname%,0
  SYS "Wimp_CreateWindow",,block% TO info%
+ $tempname%="xfer_send"
+ SYS "Wimp_LoadTemplate",,block%,ind3%,ind3%+399,-1,tempname%,0
+ SYS "Wimp_CreateWindow",,block% TO save%
  SYS "Wimp_CloseTemplate"
 ENDPROC
 :
@@ -69,7 +92,7 @@ DEF PROCmouse_click
   WHEN block%!12=-2 AND block%!8=2
    mx%=!block%
    menu_chosen%=bmenu%
-   PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+   PROCdisplay_bar_menu(bmenu%,3,0,mx%)
   WHEN block%!12=-2 AND block%!8<>2
    !block%=main%
    SYS "Wimp_GetWindowState",,block%
@@ -94,6 +117,8 @@ DEF PROCmouse_click
     IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)):ENDPROC
     PROCupdate_icons
    ENDIF
+  WHEN block%!12=save% AND (block%!8 AND &50)>0 AND block%!16=i_fileicon%
+   PROCstart_dragsave(block%,save%,i_fileicon%)
  ENDCASE
 ENDPROC
 :
@@ -102,7 +127,7 @@ DEF PROCmenu_selection
  SYS "Wimp_GetPointerInfo",,block%
  adjust%=block%!8 AND 1
  IF menu_chosen%=bmenu% AND $dc%="Quit" THEN quit%=TRUE
- IF adjust%=1 THEN PROCdisplay_bar_menu(bmenu%,2,0,mx%)
+ IF adjust%=1 THEN PROCdisplay_bar_menu(bmenu%,3,0,mx%)
 ENDPROC
 :
 DEF PROCkey_pressed
@@ -126,7 +151,7 @@ DEF PROCreturn_or_arrow_key
  CASE block%!4 OF
   WHEN i_station%
    stn$=FNget_icon_string(i_station%)
-   SYS "XElite_SetStatus",1,block%!28 TO errblk%;nzcv%
+   SYS "XElite_SetStatus",1,stn$ TO errblk%;nzcv%
    IF nzcv% AND 1 THEN PROCerror(FNzero_string(errblk%+4)) ELSE PROCsetCaret(i%)
   WHEN i_port%
    port%=FNget_icon_value(i_port%)
@@ -174,18 +199,18 @@ DEF FNstation_number(station%,network%)
 :
 DEF PROCupdate_scores
  PROCfetch_status
- old_kills%=VAL(FNget_icon_string(i_kills%))
- IF kills%<>old_kills% THEN PROCchange_icon(block%,main%,i_kills%,STR$(kills%))
- old_deaths%=VAL(FNget_icon_string(i_deaths%))
- IF deaths%<>old_deaths% THEN PROCchange_icon(block%,main%,i_deaths%,STR$(deaths%))
+ old_kills%=FNget_icon_value(i_kills%)
+ IF kills%<>old_kills% THEN PROCchange_icon(tblock%,main%,i_kills%,STR$(kills%))
+ old_deaths%=FNget_icon_value(i_deaths%)
+ IF deaths%<>old_deaths% THEN PROCchange_icon(tblock%,main%,i_deaths%,STR$(deaths%))
  PROChideShowReset
 ENDPROC
 :
 DEF FNget_icon_string(icon%)
- !block%=main%
- block%!4=icon%
- SYS "Wimp_GetIconState",,block%
-=$(block%!28)
+ !tblock%=main%
+ tblock%!4=icon%
+ SYS "Wimp_GetIconState",,tblock%
+=$(tblock%!28)
 :
 DEF FNget_icon_value(icon%)
 =VAL(FNget_icon_string(icon%))
@@ -206,4 +231,42 @@ DEF PROChideShowEnable
  block%!8=(tx_enabled%<<21)+(grey_out%<<22)
  block%!12=(1<<21)+(1<<22)
  SYS "Wimp_SetIconState",,block%
+ENDPROC
+:
+DEF PROCsave(file$)
+ SYS "OS_File",10,file$,filetype%,,scorefile%,scorefile%+filesize%
+ENDPROC
+:
+DEF PROCcreate_data
+ PROCupdate_scores
+ scorefile%!0=FNget_icon_value(i_kills%)
+ scorefile%!4=FNget_icon_value(i_deaths%)
+ scorefile%!8=FNget_icon_value(i_port%)
+ scorefile%!12=FNget_icon_value(i_interval%)
+ stn$=FNget_icon_string(i_station%)
+ $(scorefile%+16)=stn$
+ filesize%=16+LEN(stn$)+1
+ENDPROC
+:
+DEF PROCload_ack
+ block%!12=block%!8
+ block%!16=4
+ SYS "Wimp_SendMessage",17,block%,block%!4
+ENDPROC
+:
+DEF PROCload_file(file$)
+ !tblock%=main%
+ SYS "Wimp_GetWindowState",,tblock%
+ tblock%!28=-1
+ SYS "Wimp_OpenWindow",,tblock%
+ LOCAL ERROR
+ ON ERROR LOCAL PROCerror("Error reading Scoreboard file"):ENDPROC
+ SYS "OS_File",255,file$,scorefile%,0
+ kills%=scorefile%!0:SYS "XElite_SetStatus",7,kills%
+ deaths%=scorefile%!4:SYS "XElite_SetStatus",8,deaths%
+ port%=scorefile%!8:SYS "XElite_SetStatus",2,port%
+ interval%=scorefile%!12:SYS "XElite_SetStatus",6,interval%
+ stn$=$(scorefile%+16):SYS "XElite_SetStatus",1,stn$
+ SYS "XElite_SetStatus",5
+ PROCupdate_icons
 ENDPROC

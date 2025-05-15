@@ -65,7 +65,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.10 (13 May 2025)"
+.byte    "1.20 (16 May 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -353,9 +353,10 @@ EliteTxKills:
  BVS     kill1
  TEQ     R1, #0
  BNE     kill1
+EliteTxKills_SWI:
  CMP     R2, #0
  BLT     kill1
- CMP     R2, #1000
+ CMP     R2, #8000
  BGT     kill1
  STR     R2, [R12, #netTally]
  MOV     R0, #0
@@ -366,7 +367,7 @@ kill1:
  ORRS    PC, R14, #1<<28
 eliteTxKillsError:
 .long    255
-.byte    "Invalid kill tally (it must be in the range 0 to 1000)"
+.byte    "Invalid kill tally (it must be in the range 0 to 8000)"
 .byte    0
 .balign 4
 eliteTxKillsHelp:
@@ -384,6 +385,7 @@ EliteTxDeaths:
  BVS     deth1
  TEQ     R1, #0
  BNE     deth1
+EliteTxDeaths_SWI:
  CMP     R2, #0
  BLT     deth1
  CMP     R2, #255
@@ -591,6 +593,12 @@ SWI_Elite_SetStatus:
  TEQ     R0, #6
  MOVEQ   R2, R1
  BEQ     EliteTxInterval_SWI
+ TEQ     R0, #7
+ MOVEQ   R2, R1
+ BEQ     EliteTxKills_SWI
+ TEQ     R0, #8
+ MOVEQ   R2, R1
+ BEQ     EliteTxDeaths_SWI
  LDMFD   R13!, {PC}^
 InitialiseModule:
  STMFD   R13!, {R14}

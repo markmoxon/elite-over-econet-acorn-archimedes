@@ -284,7 +284,7 @@
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.10 (13 May 2025)"
+ EQUS    "1.20 (16 May 2025)"
  EQUB    0
  ALIGN
 
@@ -883,6 +883,12 @@
 \   Category: Econet
 \    Summary: Implement the EliteTxKills command
 \
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxKills_SWI                Entry point from the Elite_SetStatus SWI
+\
 \ ******************************************************************************
 
 .EliteTxKills
@@ -902,9 +908,11 @@
  TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     kill1                      \ integer
 
+.EliteTxKills_SWI
+
  CMP     R2, #0                     \ Report an error if the kill count is not
- BLT     kill1                      \ in the range 0 to 1000
- CMP     R2, #1000
+ BLT     kill1                      \ in the range 0 to 8000
+ CMP     R2, #8000
  BGT     kill1
 
  STR     R2, [R12, #netTally]       \ Set netTally to the new kill count
@@ -923,7 +931,7 @@
 .eliteTxKillsError
 
  EQUD    255
- EQUS    "Invalid kill tally (it must be in the range 0 to 1000)"
+ EQUS    "Invalid kill tally (it must be in the range 0 to 8000)"
  EQUB    0
  ALIGN
 
@@ -941,6 +949,12 @@
 \       Type: Subroutine
 \   Category: Econet
 \    Summary: Implement the EliteTxDeaths command
+\
+\ ------------------------------------------------------------------------------
+\
+\ Other entry points:
+\
+\   EliteTxDeaths_SWI               Entry point from the Elite_SetStatus SWI
 \
 \ ******************************************************************************
 
@@ -961,12 +975,14 @@
  TEQ     R1, #0                     \ Report an error if the result is not an
  BNE     deth1                      \ integer
 
- CMP     R2, #0                     \ Report an error if the kill count is not
+.EliteTxDeaths_SWI
+
+ CMP     R2, #0                     \ Report an error if the death count is not
  BLT     deth1                      \ in the range 0 to 255
  CMP     R2, #255
  BGT     deth1
 
- STR     R2, [R12, #netDeaths]      \ Set netDeaths to the new kill count
+ STR     R2, [R12, #netDeaths]      \ Set netDeaths to the new death count
 
  MOV     R0, #0                     \ Set R0 = 0 so we do not return an error
 
@@ -1342,6 +1358,8 @@
 \   SYS "Elite_SetStatus", 4                        Start transmissions
 \   SYS "Elite_SetStatus", 5                        Stop transmissions
 \   SYS "Elite_SetStatus", 6, <interval>            Set interval
+\   SYS "Elite_SetStatus", 7, <kill_tally>          Set kill tally
+\   SYS "Elite_SetStatus", 8, <death_count>         Set death count
 \   
 \ ******************************************************************************
 
@@ -1392,6 +1410,22 @@
  MOVEQ   R2, R1                     \ Move the argument into R2 and jump to the
  BEQ     EliteTxInterval_SWI        \ entry point in EliteTxInterval to set the
                                     \ interval and return from the subroutine
+                                    \ using a tail call
+
+ TEQ     R0, #7                     \ Check R0 to match this SYS command:
+                                    \ SYS "Elite_SetStatus", 7, <kills>
+
+ MOVEQ   R2, R1                     \ Move the argument into R2 and jump to the
+ BEQ     EliteTxKills_SWI           \ entry point in EliteTxKills to set the
+                                    \ kill tally and return from the subroutine
+                                    \ using a tail call
+
+ TEQ     R0, #8                     \ Check R0 to match this SYS command:
+                                    \ SYS "Elite_SetStatus", 8, <kills>
+
+ MOVEQ   R2, R1                     \ Move the argument into R2 and jump to the
+ BEQ     EliteTxDeaths_SWI          \ entry point in EliteTxDeaths to set the
+                                    \ death count and return from the subroutine
                                     \ using a tail call
 
  LDMFD   R13!, {PC}^                \ Return from the subroutine
