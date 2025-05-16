@@ -5,6 +5,7 @@ REM By Mark Moxon
 LIBRARY "<EliteNet$Dir>.WimpLib"
 IF FNlibrary_version<50 THEN ERROR 255,"Out of date version of Wimp Library"
 PROCinit
+PROCload_parameter
 SYS "OS_ReadMonotonicTime" TO oldtime%
 REPEAT
  SYS "Wimp_Poll",0,block% TO reason%
@@ -50,7 +51,7 @@ DEF PROCinit
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
- i_version%=4:i_filename%=2:i_fileicon%=3
+ i_version%=4:i_fileok%=0:i_filename%=2:i_fileicon%=3
  filetype%=&3EE
  SYS "Wimp_Initialise",200,&4B534154,task_name$ TO wimp%,task%
  PROCtemplates
@@ -119,6 +120,8 @@ DEF PROCmouse_click
    ENDIF
   WHEN block%!12=save% AND (block%!8 AND &50)>0 AND block%!16=i_fileicon%
    PROCstart_dragsave(block%,save%,i_fileicon%)
+  WHEN block%!12=save% AND block%!8<>2 AND block%!16=i_fileok%
+   PROCquicksave(block%,save%,i_fileicon%,task$)
  ENDCASE
 ENDPROC
 :
@@ -248,6 +251,13 @@ DEF PROCcreate_data
  filesize%=16+LEN(stn$)+1
 ENDPROC
 :
+DEF PROCload_parameter
+ SYS "OS_GetEnv" TO command$
+ SYS "OS_ReadArgs",",quit/S,,",command$,block%,&1000
+ file$=$(block%!12)
+ IF file$<>"" THEN PROCload_file(file$)
+ENDPROC
+:
 DEF PROCload_ack
  block%!12=block%!8
  block%!16=4
@@ -268,5 +278,6 @@ DEF PROCload_file(file$)
  interval%=scorefile%!12:SYS "XElite_SetStatus",6,interval%
  stn$=$(scorefile%+16):SYS "XElite_SetStatus",1,stn$
  SYS "XElite_SetStatus",5
+ PROCchange_icon(tblock%,save%,i_filename%,file$)
  PROCupdate_icons
 ENDPROC
