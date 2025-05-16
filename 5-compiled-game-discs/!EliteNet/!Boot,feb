@@ -1,3 +1,6 @@
 | !Boot file for EliteNet
 |
 IconSprites <Obey$Dir>.!Sprites
+Set EliteNet$Dir <Obey$Dir>
+Set File$Type_3EE Scoreboard
+Set Alias$@RunType_3EE Run <EliteNet$Dir>.!Run %%*0

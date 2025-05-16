@@ -6,4 +6,4 @@ RMEnsure UtilityModule 3.10 Error This application requires RISC OS 3.10 or late
 RMEnsure Econet 0.00 Error This application requires Econet to be enabled
 RMEnsure EliteOverEconet 1.20 RMRun <EliteNet$Dir>.EliteNet
 WimpSlot -min 64K -max 64K
-Run <EliteNet$Dir>.!RunImage %*0
+Run <EliteNet$Dir>.!RunImage %%*0
