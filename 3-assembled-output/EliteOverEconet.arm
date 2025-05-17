@@ -65,7 +65,7 @@ title:
 help:
 .byte    "EliteOverEconet"
 .byte    9
-.byte    "1.20 (16 May 2025)"
+.byte    "1.20 (17 May 2025)"
 .byte    0
 .balign 4
 helpAndCommandTable:
@@ -710,26 +710,70 @@ TransmitData:
  SWI     XOS_ValidateAddress
  BVS     skipT
  BCS     skipT
- LDR     R2, [R0]
- TST     R2, #0x000000FF
- ORREQ   R2, R2, #0x0000000D
- TST     R2, #0x0000FF00
- ORREQ   R2, R2, #0x00000D00
- TST     R2, #0x00FF0000
- ORREQ   R2, R2, #0x000D0000
- TST     R2, #0xFF000000
- ORREQ   R2, R2, #0x0D000000
- STR     R2, [R12, #trName]
- LDR     R2, [R0, #4]
- TST     R2, #0x000000FF
- ORREQ   R2, R2, #0x0000000D
- TST     R2, #0x0000FF00
- ORREQ   R2, R2, #0x00000D00
- TST     R2, #0x00FF0000
- ORREQ   R2, R2, #0x000D0000
- BIC     R2, R2, #0xFF000000
- ORR     R2, R2, #0x0D000000
- STR     R2, [R12, #trName+4]
+ MOV     R3, #0
+ MOV     R4, #0
+ LDR     R1, [R0]
+ ANDS    R2, R1, #0x000000FF
+ ORREQ   R3, R3, #0x0000000D
+ BEQ     tran1
+ CMP     R2, #0x00000020
+ BLT     skipT
+ CMP     R2, #0x0000007E
+ BGT     skipT
+ ORR     R3, R3, R2
+ ANDS    R2, R1, #0x0000FF00
+ ORREQ   R3, R3, #0x00000D00
+ BEQ     tran1
+ CMP     R2, #0x00002000
+ BLT     skipT
+ CMP     R2, #0x00007E00
+ BGT     skipT
+ ORR     R3, R3, R2
+ ANDS    R2, R1, #0x00FF0000
+ ORREQ   R3, R3, #0x000D0000
+ BEQ     tran1
+ CMP     R2, #0x00200000
+ BLT     skipT
+ CMP     R2, #0x007E0000
+ BGT     skipT
+ ORR     R3, R3, R2
+ ANDS    R2, R1, #0xFF000000
+ ORREQ   R3, R3, #0x0D000000
+ BEQ     tran1
+ CMP     R2, #0x20000000
+ BLT     skipT
+ CMP     R2, #0x7E000000
+ BGT     skipT
+ ORR     R3, R3, R2
+ LDR     R1, [R0, #4]
+ ANDS    R2, R1, #0x000000FF
+ ORREQ   R4, R4, #0x0000000D
+ BEQ     tran1
+ CMP     R2, #0x00000020
+ BLT     skipT
+ CMP     R2, #0x0000007E
+ BGT     skipT
+ ORR     R4, R4, R2
+ ANDS    R2, R1, #0x0000FF00
+ ORREQ   R4, R4, #0x00000D00
+ BEQ     tran1
+ CMP     R2, #0x00002000
+ BLT     skipT
+ CMP     R2, #0x00007E00
+ BGT     skipT
+ ORR     R4, R4, R2
+ ANDS    R2, R1, #0x00FF0000
+ ORREQ   R4, R4, #0x000D0000
+ BEQ     tran1
+ CMP     R2, #0x00200000
+ BLT     skipT
+ CMP     R2, #0x007E0000
+ BGT     skipT
+ ORR     R4, R4, R2
+ ORR     R4, R4, #0x0D000000
+tran1:
+ STR     R3, [R12, #trName]
+ STR     R4, [R12, #trName+4]
  MOV     R3, #1
  ADR     R0, cmdrLegal
  LDR     R0, [R0]

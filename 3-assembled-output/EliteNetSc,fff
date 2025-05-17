@@ -284,7 +284,7 @@ REM ****************************************************************************
 
  EQUS    "EliteOverEconet"
  EQUB    9
- EQUS    "1.20 (16 May 2025)"
+ EQUS    "1.20 (17 May 2025)"
  EQUB    0
  OPT     FN_AlignWithZeroes
 
@@ -1734,27 +1734,131 @@ REM ****************************************************************************
  BVS     skipT
  BCS     skipT
 
- LDR     R2, [R0]                   \ Fetch the first word of the commander
- TST     R2, #&000000FF             \ name, convert any null bytes to carriage
- ORREQ   R2, R2, #&0000000D         \ returns and store the result in trName
- TST     R2, #&0000FF00
- ORREQ   R2, R2, #&00000D00
- TST     R2, #&00FF0000
- ORREQ   R2, R2, #&000D0000
- TST     R2, #&FF000000
- ORREQ   R2, R2, #&0D000000
- STR     R2, [R12, #trName]
+                                    \ We now fetch the commander name, and add a
+                                    \ carriage return to the end while checking
+                                    \ that it is made up of valid characters and
+                                    \ doesn't contain any control codes [valid
+                                    \ characters being in the range &20 to &7E]
 
- LDR     R2, [R0, #4]               \ Fetch the second word of the commander
- TST     R2, #&000000FF             \ name, convert any null bytes to carriage
- ORREQ   R2, R2, #&0000000D         \ returns and store the result in trName,
- TST     R2, #&0000FF00             \ making sure the last character is always
- ORREQ   R2, R2, #&00000D00         \ a carriage return
- TST     R2, #&00FF0000
- ORREQ   R2, R2, #&000D0000
- BIC     R2, R2, #&FF000000
- ORR     R2, R2, #&0D000000
- STR     R2, [R12, #trName+4]
+ MOV     R3, #0                     \ Initialise R3 and R4 so we can use them to
+ MOV     R4, #0                     \ build the two words of the transmission
+                                    \ name
+
+ LDR     R1, [R0]                   \ Set R1 to the first word of the commander
+                                    \ name, i.e. bytes #0 to #3
+
+                                    \ Byte #0
+
+ ANDS    R2, R1, #&000000FF         \ If byte #0 of the name is null, store a
+ ORREQ   R3, R3, #&0000000D         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00000020             \ If byte #0 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&0000007E             \ is not in the right format
+ BGT     skipT
+
+ ORR     R3, R3, R2                 \ Byte #0 is alphanumeric, so store it in R3
+                                    \ [the first word of the transmission name]
+
+                                    \ Byte #1
+
+ ANDS    R2, R1, #&0000FF00         \ If byte #1 of the name is null, store a
+ ORREQ   R3, R3, #&00000D00         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00002000             \ If byte #1 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&00007E00             \ is not in the right format
+ BGT     skipT
+
+ ORR     R3, R3, R2                 \ Byte #1 is alphanumeric, so store it in R3
+                                    \ [the first word of the transmission name]
+
+                                    \ Byte #2
+
+ ANDS    R2, R1, #&00FF0000         \ If byte #2 of the name is null, store a
+ ORREQ   R3, R3, #&000D0000         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00200000             \ If byte #2 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&007E0000             \ is not in the right format
+ BGT     skipT
+
+ ORR     R3, R3, R2                 \ Byte #2 is alphanumeric, so store it in R3
+                                    \ [the first word of the transmission name]
+
+                                    \ Byte #3
+
+ ANDS    R2, R1, #&FF000000         \ If byte #3 of the name is null, store a
+ ORREQ   R3, R3, #&0D000000         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&20000000             \ If byte #3 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&7E000000             \ is not in the right format
+ BGT     skipT
+
+ ORR     R3, R3, R2                 \ Byte #3 is alphanumeric, so store it in R3
+                                    \ [the first word of the transmission name]
+
+ LDR     R1, [R0, #4]               \ Set R1 to the second word of the commander
+                                    \ name, i.e. bytes #4 to #7
+
+                                    \ Byte #4
+
+ ANDS    R2, R1, #&000000FF         \ If byte #4 of the name is null, store a
+ ORREQ   R4, R4, #&0000000D         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00000020             \ If byte #4 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&0000007E             \ is not in the right format
+ BGT     skipT
+
+ ORR     R4, R4, R2                 \ Byte #4 is alphanumeric, so store it in R4
+                                    \ [the second word of the transmission name]
+
+                                    \ Byte #5
+
+ ANDS    R2, R1, #&0000FF00         \ If byte #5 of the name is null, store a
+ ORREQ   R4, R4, #&00000D00         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00002000             \ If byte #5 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&00007E00             \ is not in the right format
+ BGT     skipT
+
+ ORR     R4, R4, R2                 \ Byte #4 is alphanumeric, so store it in R4
+                                    \ [the second word of the transmission name]
+
+                                    \ Byte #6
+
+ ANDS    R2, R1, #&00FF0000         \ If byte #6 of the name is null, store a
+ ORREQ   R4, R4, #&000D0000         \ carriage return in the transmission name
+ BEQ     tran1                      \ and jump to tran1 to store it
+
+ CMP     R2, #&00200000             \ If byte #6 is not alphanumeric, jump to
+ BLT     skipT                      \ skipT to skip the transmission as the name
+ CMP     R2, #&007E0000             \ is not in the right format
+ BGT     skipT
+
+ ORR     R4, R4, R2                 \ Byte #6 is alphanumeric, so store it in R4
+                                    \ [the second word of the transmission name]
+
+ ORR     R4, R4, #&0D000000         \ If we get here then the name contains at
+                                    \ least seven characters, so make sure the
+                                    \ last character in byte #7 is a carriage
+                                    \ return to terminate the name [as the
+                                    \ scoreboard only supports names of up to
+                                    \ seven characters]
+
+.tran1
+
+ STR     R3, [R12, #trName]         \ Store the transmission name in trName
+ STR     R4, [R12, #trName+4]
 
  MOV     R3, #1                     \ Set R3 to 1 [for Offender]
 

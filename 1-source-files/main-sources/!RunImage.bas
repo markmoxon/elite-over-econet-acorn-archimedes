@@ -16,7 +16,7 @@ REPEAT
   WHEN 2:SYS "Wimp_OpenWindow",,block%
   WHEN 3:SYS "Wimp_CloseWindow",,block%
   WHEN 6:PROCmouse_click
-  WHEN 7:PROCcreate_data:PROCend_dragsave(block%,save%,i_filename%,filetype%,filesize%)
+  WHEN 7:PROCuser_drag_box
   WHEN 8:PROCkey_pressed
   WHEN 9:PROCmenu_selection
   WHEN 17,18:PROCmessage
@@ -26,28 +26,12 @@ UNTIL quit%
 SYS "Wimp_CloseDown",task%,&4B534154
 END
 :
-DEF PROCmessage
- CASE block%!16 OF
-  WHEN 0:quit%=TRUE
-  WHEN 2:temp$=FNmessage_datasave(block%)
-  WHEN 3,5
-   IF block%!40=filetype% THEN PROCload_ack:PROCload_file(FNzero_string(block%+44))
-  WHEN 6
-   IF firstsave% THEN
-    PROCcreate_data
-    source_buffer%=scorefile%:bytes_left%=filesize%
-   ENDIF
-   firstsave%=FNmessage_ramsave(block%,task%,source_buffer%,bytes_left%)
-   IF firstsave% THEN SYS "Wimp_CreateMenu",,-1
- ENDCASE
-ENDPROC
-:
 DEF PROCinit
  DIM block% &1000,tblock% &1000,eblock% &100,bmenu% &1000
  DIM ind% 500,ind2% 200,ind3% 400,tempname% 100,dc% &100,scorefile% 1000
  ON ERROR PROCerror("")
  task_name$="Elite over Econet"
- version$="1.20 (16-May-2025)"
+ version$="1.20 (17-May-2025)"
  quit%=FALSE:tx_enabled%=0:nzcv%=0
  i_reset%=3:i_station%=6:i_port%=7
  i_interval%=8:i_enable%=12:i_kills%=16:i_deaths%=18
@@ -88,6 +72,30 @@ DEF PROCtemplates
  SYS "Wimp_CloseTemplate"
 ENDPROC
 :
+DEF PROCmessage
+ CASE block%!16 OF
+  WHEN 0:quit%=TRUE
+  WHEN 2
+   temp$=FNmessage_datasave(block%)
+   IF temp$<>"" THEN SYS "Wimp_CreateMenu",,-1
+  WHEN 3,5
+   IF block%!40=filetype% THEN PROCload_ack:PROCload_file(FNzero_string(block%+44))
+  WHEN 6
+   IF firstsave% THEN
+    PROCcreate_data
+    source_buffer%=scorefile%:bytes_left%=filesize%
+   ENDIF
+   firstsave%=FNmessage_ramsave(block%,task%,source_buffer%,bytes_left%)
+   IF firstsave% THEN SYS "Wimp_CreateMenu",,-1
+ ENDCASE
+ENDPROC
+:
+DEF PROCuser_drag_box
+ PROCcreate_data
+ PROCend_dragsave(block%,save%,i_filename%,filetype%,filesize%)
+ SYS "Wimp_CreateMenu",,-1
+ENDPROC
+:
 DEF PROCmouse_click
  CASE TRUE OF
   WHEN block%!12=-2 AND block%!8=2
@@ -121,7 +129,10 @@ DEF PROCmouse_click
   WHEN block%!12=save% AND (block%!8 AND &50)>0 AND block%!16=i_fileicon%
    PROCstart_dragsave(block%,save%,i_fileicon%)
   WHEN block%!12=save% AND block%!8<>2 AND block%!16=i_fileok%
-   PROCquicksave(block%,save%,i_fileicon%,task$)
+   adjust%=block%!8 AND 1
+   saved%=FALSE
+   PROCquicksave(block%,save%,i_filename%,task$)
+   IF saved% AND adjust%<>1 THEN SYS "Wimp_CreateMenu",,-1
  ENDCASE
 ENDPROC
 :
@@ -134,6 +145,30 @@ DEF PROCmenu_selection
 ENDPROC
 :
 DEF PROCkey_pressed
+ CASE TRUE OF
+  WHEN !block%=main%
+   CASE block%!24 OF
+    WHEN 13,&18E,&18A
+     IF block%!4=i_interval% THEN i%=i_station% ELSE i%=block%!4+1
+     PROCreturn_or_arrow_key
+    WHEN &18F
+     IF block%!4=i_station% THEN i%=i_interval% ELSE i%=block%!4-1
+     PROCreturn_or_arrow_key
+    OTHERWISE
+     SYS "Wimp_ProcessKey",block%!24
+   ENDCASE
+  WHEN !block%=save%
+   IF block%!24=13 THEN
+    saved%=FALSE
+    PROCquicksave(block%,save%,i_filename%,task$)
+    IF saved% THEN SYS "Wimp_CreateMenu",,-1
+   ELSE
+    SYS "Wimp_ProcessKey",block%!24
+   ENDIF
+  OTHERWISE
+   SYS "Wimp_ProcessKey",block%!24
+ ENDCASE
+
  IF !block%=main% THEN
   CASE block%!24 OF
    WHEN 13,&18E,&18A
@@ -237,7 +272,10 @@ DEF PROChideShowEnable
 ENDPROC
 :
 DEF PROCsave(file$)
+ PROCcreate_data
  SYS "OS_File",10,file$,filetype%,,scorefile%,scorefile%+filesize%
+ PROCchange_icon(tblock%,save%,i_filename%,file$)
+ saved%=TRUE
 ENDPROC
 :
 DEF PROCcreate_data
