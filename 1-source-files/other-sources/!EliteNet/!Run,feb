@@ -2,7 +2,7 @@
 |
 Set EliteNet$Dir <Obey$Dir>
 IconSprites <EliteNet$Dir>.!Sprites
-Set File$Type_3EE Scoreboard
+Set File$Type_3EE EliteNet
 Set Alias$@RunType_3EE Run <EliteNet$Dir>.!Run %%*0
 RMEnsure UtilityModule 3.10 Error This application requires RISC OS 3.10 or later
 RMEnsure Econet 0.00 Error This application requires Econet to be enabled

@@ -1,4 +1,4 @@
-Elite over Econet
+EliteNet: Elite over Econet
 by Mark Moxon
 
 This application sends scores from Archimedes Elite
@@ -8,9 +8,12 @@ It needs version 1.14 of Elite (available from Ian
 Bell's website) and a working Econet connection.
 
 To send scores to a scoreboard, run both Elite and
-!EliteNet. Click on the EliteNet icon to bring up
+EliteNet. Click on the EliteNet icon to bring up
 the configuration window, and enter the station and
-port number for the scoreboard.
+port number for the scoreboard. Alternatively you
+can load an existing configuration from an EliteNet
+file by double-clicking the file or by dragging it
+to the application's window or icon bar icon.
 
 You can move to the next field by pressing Return
 or Tab, and you can use the up/down arrow keys to
@@ -29,6 +32,14 @@ you are in the game. You can optionally change the
 transmission interval, but don't make it too short
 for too long, especially on a busy network.
 
+You can save the network configuration and the
+current score as an EliteNet file. You can do this
+from the icon bar menu. This lets you take a break
+from playing a multiplayer game, and when you come
+back, you can reload both your EliteNet score file
+and your Elite commander file, so you can jump back
+into the competition without losing your place.
+
 To set the scores back to zero, click the Reset
 button. You might want to do this before a new
 muliplayer competition starts, so everyone begins
@@ -38,5 +49,9 @@ This application comes with a maxed-out commander
 file called Max. This matches the MAX commander
 that comes with the BBC Micro version of Elite
 over Econet.
+
+It also comes with a configuration file for the
+TNMoC Econet Cloud scoreboard, which can be found
+at station 63.63 on port 63.
 
 See bbcelite.com/econet for more details.
