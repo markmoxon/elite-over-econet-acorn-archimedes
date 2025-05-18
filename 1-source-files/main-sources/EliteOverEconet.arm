@@ -1670,45 +1670,6 @@
                                     \ skipT to return from the subroutine as
                                     \ Elite is not paged in
 
-\ADR     R0, string1Addr            \ Check to see if the first string to match
-\LDR     R0, [R0]                   \ is in logical RAM
-\MOV     R1, R0
-\SWI     XOS_ValidateAddress
-\BVS     skipT
-\BCS     skipT
-\
-\LDR     R0, [R0]                   \ If the first string doesn't match, jump
-\ADR     R1, string1Match           \ to skipT to return from the subroutine as
-\LDR     R1, [R1]                   \ Elite is not paged in
-\CMP     R0, R1
-\BNE     skipT
-\
-\ADR     R0, string2Addr            \ Check to see if the second string to match
-\LDR     R0, [R0]                   \ is in logical RAM
-\MOV     R1, R0
-\SWI     XOS_ValidateAddress
-\BVS     skipT
-\BCS     skipT
-\
-\LDR     R0, [R0]                   \ If the second string doesn't match, jump
-\ADR     R1, string2Match           \ to skipT to return from the subroutine as
-\LDR     R1, [R1]                   \ Elite is not paged in
-\CMP     R0, R1
-\BNE     skipT
-\
-\ADR     R0, string3Addr            \ Check to see if the third string to match
-\LDR     R0, [R0]                   \ is in logical RAM
-\MOV     R1, R0
-\SWI     XOS_ValidateAddress
-\BVS     skipT
-\BCS     skipT
-\
-\LDR     R0, [R0]                   \ If the third string doesn't match, jump
-\ADR     R1, string3Match           \ to skipT to return from the subroutine as
-\LDR     R1, [R1]                   \ Elite is not paged in
-\CMP     R0, R1
-\BNE     skipT
-
                                     \ If we get here then Elite is paged in
 
  LDR     R0, [R12, #semaphore]      \ If the semaphore flag is non-zero then we
@@ -2250,30 +2211,6 @@
 .cmdrCondition
 
  EQUD    &000653A0
-
-\.string1Addr
-\
-\EQUD    &0001AF14
-\
-\.string1Match
-\
-\EQUD    &4E495247                  \ GRIN (part of "CLIVE GRINGRAS")
-\
-\.string2Addr
-\
-\EQUD    &0001AF00
-\
-\.string2Match
-\
-\EQUD    &45525241                  \ ARRE (part of "WARREN BURCH")
-\
-\.string3Addr
-\
-\EQUD    &00071508
-\
-\.string3Match
-\
-\EQUD    &34312E31                  \ 1.14 (part of "Version 1.14")
 
 .gameOverAddr
 

@@ -50,8 +50,4 @@ file called Max. This matches the MAX commander
 that comes with the BBC Micro version of Elite
 over Econet.
 
-It also comes with a configuration file for the
-TNMoC Econet Cloud scoreboard, which can be found
-at station 63.63 on port 63.
-
 See bbcelite.com/econet for more details.
