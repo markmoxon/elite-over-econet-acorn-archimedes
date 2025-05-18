@@ -714,8 +714,7 @@ TransmitData:
  MOV     R4, #0
  LDR     R1, [R0]
  ANDS    R2, R1, #0x000000FF
- ORREQ   R3, R3, #0x0000000D
- BEQ     tran1
+ BEQ     skipT
  CMP     R2, #0x00000020
  BLT     skipT
  CMP     R2, #0x0000007E

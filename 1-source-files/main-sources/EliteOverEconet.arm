@@ -1710,9 +1710,9 @@
 
                                     \ Byte #0
 
- ANDS    R2, R1, #&000000FF         \ If byte #0 of the name is null, store a
- ORREQ   R3, R3, #&0000000D         \ carriage return in the transmission name
- BEQ     tran1                      \ and jump to tran1 to store it
+ ANDS    R2, R1, #&000000FF         \ If byte #0 of the name is null, then the
+ BEQ     skipT                      \ name is blank, so jump to skipT to skip
+                                    \ the transmission as this isn't correct
 
  CMP     R2, #&00000020             \ If byte #0 is not alphanumeric, jump to
  BLT     skipT                      \ skipT to skip the transmission as the name
