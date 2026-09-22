@@ -40,8 +40,8 @@ ifeq ($(OS), Windows_NT)
 
 	copy "1-source-files\other-sources\Max,c87" "5-compiled-game-discs\Max,c87"
 
-	xcopy /q /y /I 5-compiled-game-discs\!EliteNet !EliteNet
-	xcopy /q /y /I 5-compiled-game-discs\MakeBasic MakeBasic
+	xcopy /q /y /i 5-compiled-game-discs\!EliteNet !EliteNet
+	xcopy /q /y /i 5-compiled-game-discs\MakeBasic MakeBasic
 	copy "5-compiled-game-discs\Max,c87" "Max,c87"
 	tar -ca --exclude ".*" -f EliteNet.zip !EliteNet MakeBasic "Max,c87"
 	move EliteNet.zip "5-compiled-game-discs\"
